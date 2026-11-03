@@ -5,12 +5,16 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
+    private static final String GAME_URL = "https://educhicomatos-ai.github.io/roadster-car-game/";
     private WebView web;
+    private boolean fallback = false;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -25,8 +29,18 @@ public class MainActivity extends Activity {
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setAllowFileAccess(true);
         s.setLoadWithOverviewMode(true);
-        web.setWebViewClient(new WebViewClient());
-        web.loadUrl("file:///android_asset/index.html");
+        web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onReceivedError(WebView v, WebResourceRequest r, WebResourceError e) {
+                // Sem internet na primeira abertura: usa a cópia embutida no app.
+                if (r.isForMainFrame() && !fallback) {
+                    fallback = true;
+                    v.loadUrl("file:///android_asset/index.html");
+                }
+            }
+        });
+        // Abre a versão mais recente publicada no GitHub Pages; o service worker do jogo guarda cópia para uso offline.
+        web.loadUrl(GAME_URL);
         hideBars();
     }
 
