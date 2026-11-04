@@ -5,14 +5,14 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Roadster Rocket">
+<meta name="apple-mobile-web-app-title" content="Rocket Car Game">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Roadster Rocket</title>
+<title>Rocket Car Game</title>
 <style>*,*::before,*::after{box-sizing:border-box}html,body{margin:0;padding:0;height:100%;background:#0a0f2e}[hidden]{display:none!important}</style>
 </head><body>
-<title>Roadster Rocket</title>
+<title>Rocket Car Game</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -303,9 +303,9 @@ h1 span{text-shadow:0 0 18px rgba(215,243,255,.4);animation:glow 2.6s ease-in-ou
 
 <div id="overlay">
   <div class="sheet" id="homeSheet">
-    <p class="kicker">Simulador não oficial · Tesla Roadster Rocket</p>
-    <h1>Roadster <span>Rocket</span></h1>
-    <p class="lead">Pilote o Roadster voador, salte sobre o trânsito, sobreviva aos eventos surpresa e ganhe dinheiro para melhorar o carro.</p>
+    <p class="kicker">Corrida e sobrevivência em alta velocidade</p>
+    <h1>Rocket Car <span>Game</span></h1>
+    <p class="lead">Pilote o carro-foguete, salte sobre o trânsito, sobreviva aos eventos surpresa e ganhe dinheiro para melhorar o carro.</p>
     <div class="statrow">
       <div><span class="lbl">Recorde</span><span class="big" id="homeBest">0</span></div>
       <div><span class="lbl">Dinheiro</span><span class="big coin" id="homeMoney">$ 0</span></div>
@@ -317,19 +317,17 @@ h1 span{text-shadow:0 0 18px rgba(215,243,255,.4);animation:glow 2.6s ease-in-ou
       <button class="go alt sm" id="goConsole" type="button">Console</button>
       <button class="go alt sm" id="dlGame" type="button" hidden>Baixar para o celular</button>
     </div>
-    <p class="note">Dica: aperte <b>/</b> no menu para abrir o console. Projeto de fã, sem ligação com a Tesla.</p>
+    <p class="note">Dica: aperte <b>/</b> no menu para abrir o console.</p>
   </div>
 
   <div class="sheet" id="howSheet" hidden>
-    <p class="kicker">Simulador não oficial · Tesla Roadster Rocket</p>
-    <h1>Roadster <span>Rocket</span></h1>
-    <p class="lead">Pilote o Roadster voador numa pista no Texas. Desvie de carros, vans, ônibus e caminhões, colete power-ups e gaste o ar comprimido para saltar sobre o trânsito antes que o tempo acabe. A pista é larga, tem sete faixas e protege as laterais.</p>
+    <p class="kicker">Corrida e sobrevivência em alta velocidade</p>
+    <h1>Rocket Car <span>Game</span></h1>
+    <p class="lead">Pilote o carro-foguete numa pista no deserto. Desvie de carros, vans, ônibus e caminhões, colete power-ups e gaste o ar comprimido para saltar sobre o trânsito antes que o tempo acabe. A pista é larga, tem sete faixas e protege as laterais.</p>
     <dl class="facts">
       <dt>Recorde</dt><dd id="menuBest">0</dd>
-      <dt>Evento</dt><dd>15 de outubro de 2026, perto de Waco, Texas</dd>
-      <dt>Propulsão</dt><dd>10 propulsores a gás frio e 600 L de ar comprimido, tecnologia da SpaceX</dd>
-      <dt>Versões</dt><dd>Performance e Thrust (2 lugares) e Rocket (1 lugar, a única que voa)</dd>
-      <dt>Produção</dt><dd>Prevista para 2028</dd>
+      <dt>Propulsão</dt><dd>10 propulsores a gás frio e 600 L de ar comprimido</dd>
+      <dt>Pista</dt><dd>Sete faixas, com proteção nas laterais</dd>
     </dl>
     <ul class="rules">
       <li><b>Saltar sobre um veículo</b> +200 a +600 pontos e +2 a +4 s (quanto maior, mais vale)</li>
@@ -349,7 +347,7 @@ h1 span{text-shadow:0 0 18px rgba(215,243,255,.4);animation:glow 2.6s ease-in-ou
     <p class="keys"><b>A / D</b> ou setas: direção · <b>Shift</b>: impulso traseiro · <b>Espaço</b>: elevar · <b>E</b>: giro no ar · <b>S</b>: freio · <b>P</b>: pausar</p>
     <p class="touchhint">Use os botões na tela. Segure <b>Impulso</b> e <b>Elevar</b> para gastar ar. Toque em <b>Giro</b> quando estiver no ar.</p>
     <button class="go" id="howBack" type="button">Voltar</button>
-    <p class="note" id="ovMsg">No evento real o carro fez saltos curtos e não mostrou voo contínuo. Aqui o voo é exagerado para o jogo. Projeto de fã, sem ligação com a Tesla.</p>
+    <p class="note" id="ovMsg">Jogo independente: o voo e a física são exagerados de propósito.</p>
   </div>
 
   <div class="sheet" id="garageSheet" hidden>
@@ -1055,11 +1053,11 @@ fitOrientation();
     function build(lib){
       var libTag=lib?'<script>'+lib.replace(/<\/script/gi,'<\\/script')+'<\/script>':'<script src="'+three+'"><\/script>';
       var game=gameSource().replace(/<\/script/gi,'<\\/script');
-      return '<!doctype html>\n<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#0a0f2e"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Roadster Rocket"><title>Roadster Rocket</title>'
+      return '<!doctype html>\n<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#0a0f2e"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Rocket Car Game"><title>Rocket Car Game</title>'
         +'<style>*{box-sizing:border-box}html,body{margin:0;height:100%;background:#0a0f2e}[hidden]{display:none!important}</style></head><body>'+body.innerHTML+libTag+'<script>'+game+'<\/script></body></html>';
     }
     function finish(html){
-      dl.save({filename:'roadster-rocket.html',data:new Blob([html],{type:'text/html'})}).then(function(){toast('Arquivo salvo. Abra-o no navegador do celular.','good');},function(err){ if(err&&err.code!=='declined') toast('Não foi possível baixar aqui.','bad'); }).then(function(){b.disabled=false; b.textContent=old;});
+      dl.save({filename:'rocket-car-game.html',data:new Blob([html],{type:'text/html'})}).then(function(){toast('Arquivo salvo. Abra-o no navegador do celular.','good');},function(err){ if(err&&err.code!=='declined') toast('Não foi possível baixar aqui.','bad'); }).then(function(){b.disabled=false; b.textContent=old;});
     }
     var done=false;
     try{

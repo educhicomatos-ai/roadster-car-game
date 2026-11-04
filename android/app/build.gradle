@@ -2,10 +2,10 @@ plugins {
     id 'com.android.application'
 }
 android {
-    namespace 'com.roadster.rocket'
+    namespace 'com.rocketcar.game'
     compileSdk 34
     defaultConfig {
-        applicationId "com.roadster.rocket"
+        applicationId "com.rocketcar.game"
         minSdk 24
         targetSdk 34
         versionCode 1

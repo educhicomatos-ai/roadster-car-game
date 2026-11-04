@@ -1,7 +1,7 @@
-/* Roadster Rocket: service worker.
+/* Rocket Car Game: service worker.
    - index.html e manifesto: rede primeiro (atualiza sozinho), cache só se estiver offline.
    - Motor 3D, fontes e ícones: cache primeiro (baixados uma vez, depois funcionam offline). */
-var CACHE='roadster-rocket-v1';
+var CACHE='rocket-car-game-v2';
 var CORE=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png'];
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(CORE);}).then(function(){return self.skipWaiting();}));

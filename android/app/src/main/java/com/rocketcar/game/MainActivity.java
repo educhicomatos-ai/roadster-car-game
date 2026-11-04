@@ -1,4 +1,4 @@
-package com.roadster.rocket;
+package com.rocketcar.game;
 
 import android.app.Activity;
 import android.graphics.Color;

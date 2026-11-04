@@ -1,7 +1,7 @@
 {
-  "name": "Roadster Rocket",
-  "short_name": "Roadster",
-  "description": "Jogo 3D de direção com o Roadster voador",
+  "name": "Rocket Car Game",
+  "short_name": "Rocket Car",
+  "description": "Jogo 3D de direção com um carro-foguete",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
