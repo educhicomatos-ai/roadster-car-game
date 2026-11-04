@@ -2847,8 +2847,8 @@ function update(dt){
   var tx=c.x-Math.sin(cp)*9.5, ty=c.y*0.65+3.6, tz=c.z+Math.cos(cp)*9.5;
   if(ce>0.001){
     tx+=(c.x*0.85+Math.sin(tNow*0.35)*7-tx)*ce;
-    ty+=(c.y*0.5+13.5+Math.sin(tNow*0.5)*1.2-ty)*ce;
-    tz+=(c.z+14.5+Math.cos(tNow*0.3)*2.2-tz)*ce;
+    ty+=(c.y*0.5+11.5+Math.sin(tNow*0.5)*1.1-ty)*ce;
+    tz+=(c.z+12.5+Math.cos(tNow*0.3)*2-tz)*ce;
   }
   var k=1-Math.exp(-(6-3*ce)*dt);
   camera.position.x+=(tx-camera.position.x)*k;
