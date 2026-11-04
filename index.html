@@ -341,7 +341,7 @@ h1 span{text-shadow:0 0 18px rgba(215,243,255,.4);animation:glow 2.6s ease-in-ou
     <ul class="rules">
       <li><i class="dot" style="background:#d7f3ff"></i><b>Recarga</b> enche o tanque de ar</li>
       <li><i class="dot" style="background:#8dffb4"></i><b>Tempo</b> +8 s</li>
-      <li><i class="dot" style="background:#ffc24a"></i><b>Escudo</b> 10 s sem batidas</li>
+      <li><i class="dot" style="background:#ffc24a"></i><b>Escudo</b> absorve 1 batida (some em 6 s)</li>
       <li><i class="dot" style="background:#ff7ab8"></i><b>Pontos ×2</b> por 12 s</li>
       <li><i class="dot" style="background:#ff6a3a"></i><b>Ar infinito</b> por 8 s</li>
       <li>Alguns power-ups ficam no alto: use Elevar.</li>
@@ -678,7 +678,7 @@ function fillTraffic(){
 var PU={
   air:{color:0xd7f3ff,w:3,label:'Recarga de ar'},
   time:{color:0x8dffb4,w:2,label:'+8 s no relógio'},
-  shield:{color:0xffc24a,w:2,label:'Escudo · 10 s'},
+  shield:{color:0xffc24a,w:1,label:'Escudo · absorve 1 batida'},
   x2:{color:0xff7ab8,w:2,label:'Pontos ×2 · 12 s'},
   nitro:{color:0xff6a3a,w:1.5,label:'Ar infinito · 8 s'}
 };
@@ -698,7 +698,7 @@ var puMats={}, puBeams={};
     puBeams[k]=new THREE.MeshBasicMaterial({color:PU[k].color,transparent:true,opacity:0.2,depthWrite:false,side:THREE.DoubleSide});
   });
 })();
-var pups=[], PUPS=8;
+var pups=[], PUPS=2;
 function makePickup(type,py){
   var g=new THREE.Group();
   var ring=new THREE.Mesh(puGeo.ring,puMats[type]); ring.rotation.x=Math.PI/2; g.add(ring);
@@ -713,7 +713,7 @@ function resetPup(p,zRef){
   var high=Math.random()<0.3;
   p.py=high?rand(5.5,8):1.5;
   p.x=laneX((Math.random()*LANES)|0);
-  p.z=zRef-rand(0,200);
+  p.z=zRef-rand(250,900)*(1+0.5*diffT());
   p.t=rand(0,6.28);
   p.m=makePickup(p.type,p.py); p.m.position.set(p.x,p.py,p.z); scene.add(p.m);
 }
@@ -724,7 +724,7 @@ function collect(p){
   var type=p.type;
   if(type==='air') c.air=TANK;
   else if(type==='time') timeLeft+=Math.round(8*(1.1-0.4*diffT()));
-  else if(type==='shield') c.shield=10;
+  else if(type==='shield') c.shield=6;
   else if(type==='x2') c.mult=12;
   else if(type==='nitro') c.nitro=8;
   addScore(50);
@@ -1074,7 +1074,7 @@ var UPG=[
   {id:'motor',name:'Motor elétrico',desc:'+9 km/h de velocidade de cruzeiro por nível',base:400},
   {id:'tank',name:'Tanque de ar',desc:'+20% de ar comprimido por nível',base:300},
   {id:'armor',name:'Blindagem',desc:'−8% do tempo perdido em batidas por nível',base:500},
-  {id:'magnet',name:'Ímã de power-ups',desc:'Coleta power-ups de mais longe',base:350},
+  {id:'magnet',name:'Ímã de power-ups',desc:'Coleta power-ups só um pouco de mais longe (máx. nível 3)',base:600,max:3},
   {id:'clock',name:'Cronômetro estendido',desc:'+5 s no início de cada corrida por nível',base:450}
 ];
 var LOOK={
@@ -1096,7 +1096,7 @@ function loadSave(){
     var r=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
     if(r){
       d.money=Math.max(0,Math.floor(Number(r.money)||0)); d.dev=!!r.dev;
-      UPG.forEach(function(u){d.up[u.id]=clamp(Math.floor(Number(r.up&&r.up[u.id])||0),0,MAXL);});
+      UPG.forEach(function(u){d.up[u.id]=clamp(Math.floor(Number(r.up&&r.up[u.id])||0),0,u.max||MAXL);});
       for(var cat in LOOK){
         var ids=LOOK[cat].items.map(function(x){return x.id;});
         var own=(r.own&&Array.isArray(r.own[cat]))?r.own[cat].filter(function(x){return ids.indexOf(x)>=0;}):[];
@@ -1179,8 +1179,8 @@ function renderGarage(){
   var h='';
   if(garTab==='up'){
     UPG.forEach(function(u){
-      var lv=up[u.id], pips='', max=lv>=MAXL;
-      for(var i=0;i<MAXL;i++) pips+='<i'+(i<lv?' class="on"':'')+'></i>';
+      var lv=up[u.id], pips='', mx=u.max||MAXL, max=lv>=mx;
+      for(var i=0;i<mx;i++) pips+='<i'+(i<lv?' class="on"':'')+'></i>';
       var pr=upPrice(u), ok=canPay(pr);
       h+='<div class="item"><div><b>'+u.name+'</b><small>'+u.desc+'</small><div class="pips">'+pips+'</div></div>'
         +'<button class="buy'+((!max&&!ok)?' no':'')+'" type="button" data-act="buyup" data-id="'+u.id+'"'+(max?' disabled':'')+'>'+(max?'Máximo':(save.dev?'Grátis':'$ '+pr.toLocaleString('pt-BR')))+'</button></div>';
@@ -1206,7 +1206,7 @@ $('garageSheet').addEventListener('click',function(e){
   if(act==='tab'){garTab=id; garMsg(''); renderGarage(); return;}
   if(act==='buyup'){
     var u=UPG.filter(function(x){return x.id===id;})[0], pr=upPrice(u);
-    if(up[id]>=MAXL) return;
+    if(up[id]>=(u.max||MAXL)) return;
     if(!canPay(pr)){garMsg('Dinheiro insuficiente. Jogue mais corridas para ganhar.'); sfx('hit'); return;}
     pay(pr); up[id]++; persist(); applyUpgrades(); garMsg(u.name+' nível '+up[id]+' comprado.'); sfx('pickup'); renderGarage(); return;
   }
@@ -1289,9 +1289,9 @@ var lampGray=0x6a6f7c;
 function crash(o){
   o.dead=true;
   var s0=c.speed;
-  if(c.shield>0){
-    shake=Math.max(shake,0.5); addScore(100);
-    toast('Escudo! '+o.name+' arremessado','good'); sfx('shield');
+  if(absorb()){
+    shake=Math.max(shake,0.5); addScore(50);
+    toast('Escudo quebrou! '+o.name+' arremessado','good'); sfx('shield');
   }else{
     c.speed*=o.heavy?0.25:0.4; c.vy=Math.max(c.vy,4); c.grounded=false;
     var pen=Math.round((o.heavy?4:3)*(1-0.08*up.armor)*(1+0.4*diffT())*10)/10;
@@ -1380,8 +1380,19 @@ function updateFx(dt,playing){
   }else if(!zapOn && pm.emissive.getHex()!==0 && fx.dmg<=0){pm.emissive.setHex(0);}
   if(playing && timeLeft<=8 && Math.random()<0.12) burst(c.x+rand(-0.5,0.5),c.y+0.9,c.z-0.8,1,0x6a6f7c,2,0.9);
 }
+/* shield: absorbs exactly one hit (super boost keeps full invincibility) */
+function absorb(){
+  if(c.turbo>0) return true;
+  if(c.shield>0){
+    c.shield=0; hitFreeze(0.06);
+    shock(c.x,Math.max(0,c.y),c.z,0xffc24a,7,0.5); shock(c.x,Math.max(0,c.y)+0.8,c.z,0xffffff,4,0.3);
+    burst(c.x,c.y+0.9,c.z,22,0xffc24a,13,0.9);
+    return true;
+  }
+  return false;
+}
 function hurt(label,pen,slow){
-  if(c.shield>0){addScore(100); toast('Escudo! '+label+' bloqueado','good'); sfx('shield'); shake=Math.max(shake,0.4); return false;}
+  if(absorb()){addScore(50); toast('Escudo quebrou! '+label+' bloqueado','good'); sfx('shield'); shake=Math.max(shake,0.4); return false;}
   pen=Math.round(pen*(1-0.08*up.armor)*(1+0.6*diffT())*10)/10; timeLeft-=pen; c.speed*=slow; shake=1; impactFx(0.5+Math.min(1,pen/4),0xffa040);
   var f=$('flash'); f.style.transition='none'; f.style.opacity='0.45'; void f.offsetWidth; f.style.transition=''; f.style.opacity='0';
   toast(label+' −'+String(pen).replace('.',',')+' s','bad'); sfx('hit'); buzz(80);
@@ -1807,7 +1818,7 @@ function updateJet(dt,playing){
   if(j.t>=T){
     scene.remove(j.m); jet=null;
     if(playing && bossHits===0){
-      c.turbo=8; c.shield=Math.max(c.shield,8); c.speed=Math.max(c.speed,70);
+      c.turbo=8; c.speed=Math.max(c.speed,70);
       toast('SUPER BOOST + invencibilidade 8 s','good'); sfx('turbo'); flashScreen(0.4); addScore(1000);
     }else if(playing) toast('O caça foi embora','info');
     ev.kind=null; ev.next=rand(8,14)*gapMul();
@@ -1879,7 +1890,7 @@ function startLaser(v){
   sfx('charge'); toast('Raio laser! Troque de faixa','bad');
 }
 function zapPlayer(){
-  if(c.shield>0){addScore(100); toast('Escudo! Raio bloqueado','good'); sfx('shield'); shake=Math.max(shake,0.5); return;}
+  if(absorb()){addScore(50); toast('Escudo quebrou! Raio bloqueado','good'); sfx('shield'); shake=Math.max(shake,0.5); return;}
   c.zap=7; c.air=0; shake=1; bossHits++;
   if(!c.grounded||c.y>0.3){c.vy=-30; c.rolling=false;}
   c.speed*=0.85;
@@ -2760,8 +2771,8 @@ function update(dt){
     p.t+=dt;
     p.m.userData.core.rotation.y+=2.2*dt;
     p.m.position.y=p.py+Math.sin(p.t*2.4)*0.25;
-    if(playing && Math.abs(c.z-p.z)<4+up.magnet*1.5 && Math.abs(c.x-p.x)<2.6+up.magnet*1.2 && Math.abs((c.y+0.7)-p.py)<2.6+up.magnet*0.8){collect(p); return;}
-    if(p.z>c.z+30 || p.z<c.z-560) resetPup(p,c.z-250);
+    if(playing && Math.abs(c.z-p.z)<4+up.magnet*0.5 && Math.abs(c.x-p.x)<2.6+up.magnet*0.4 && Math.abs((c.y+0.7)-p.py)<2.6+up.magnet*0.25){collect(p); return;}
+    if(p.z>c.z+30 || p.z<c.z-1700) resetPup(p,c.z-250);
   });
 
   updateEvents(dt,playing);
@@ -2860,10 +2871,10 @@ function update(dt){
   elFill.classList.toggle('low',pct<15);
   elLit.textContent=Math.round(c.air)+' L';
   elFx.style.opacity=String(clamp((c.speed-50)/55,0,1)*0.6);
-  shieldMesh.visible=c.shield>0;
-  if(c.shield>0){shieldMesh.material.opacity=(c.shield<2.5 && Math.floor(c.shield*6)%2)?0.05:0.18; shieldMesh.scale.setScalar(1+0.04*Math.sin(performance.now()*0.012));}
+  shieldMesh.visible=(c.shield>0||c.turbo>0);
+  if(c.shield>0||c.turbo>0){shieldMesh.material.opacity=(c.turbo<=0 && c.shield<2 && Math.floor(c.shield*6)%2)?0.05:(c.turbo>0?0.3:0.18); shieldMesh.scale.setScalar(1+0.04*Math.sin(performance.now()*0.012));}
   var chips='';
-  [['shield','Escudo',c.shield],['x2','Pontos ×2',c.mult],['nitro','Ar infinito',c.nitro]].forEach(function(f){
+  [['shield','Escudo · 1 batida',c.shield],['x2','Pontos ×2',c.mult],['nitro','Ar infinito',c.nitro]].forEach(function(f){
     if(f[2]>0) chips+='<span class="chip" style="color:#'+('000000'+PU[f[0]].color.toString(16)).slice(-6)+'">'+f[1]+' '+Math.ceil(f[2])+' s</span>';
   });
   if(state==='play') chips+='<span class="chip" style="color:#a9b0d0">Perigo '+(1+Math.floor(diffT()*4.99))+'/5</span>';
