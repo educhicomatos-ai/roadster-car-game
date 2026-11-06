@@ -683,7 +683,7 @@ var state='menu', score=0, timeLeft=RUN_TIME, shake=0, demoT=0;
 /* difficulty grows with the score of the run: dif() 0.55 (start) to 1.3 (score 5000+) */
 function diffT(){return clamp(score/3500,0,1);}
 function dif(){return 0.8+1.7*diffT();}
-function gapMul(){return 1.2-0.8*diffT();}
+function gapMul(){return 1.5-0.7*diffT();}
 function addScore(v){var g=v*(c.mult>0?2:1); score+=g; if(g>=40) popup('+'+Math.round(g));}
 
 /* ---------- world ---------- */
@@ -826,7 +826,7 @@ var puMats={}, puBeams={};
     puBeams[k]=new THREE.MeshBasicMaterial({color:PU[k].color,transparent:true,opacity:0.2,depthWrite:false,side:THREE.DoubleSide});
   });
 })();
-var pups=[], PUPS=2;
+var pups=[], PUPS=3;
 function makePickup(type,py){
   var g=new THREE.Group();
   var ring=new THREE.Mesh(puGeo.ring,puMats[type]); ring.rotation.x=Math.PI/2; g.add(ring);
@@ -841,7 +841,7 @@ function resetPup(p,zRef){
   var high=Math.random()<0.3;
   p.py=high?rand(5.5,8):1.5;
   p.x=laneX((Math.random()*LANES)|0);
-  p.z=zRef-rand(250,900)*(1+0.5*diffT());
+  p.z=zRef-rand(250,800)*(1+0.5*diffT());
   p.t=rand(0,6.28);
   p.m=makePickup(p.type,p.py); p.m.position.set(p.x,p.py,p.z); scene.add(p.m);
 }
@@ -2832,7 +2832,7 @@ function updateJet(dt,playing){
       c.turbo=8; c.speed=Math.max(c.speed,70);
       toast('SUPER BOOST + invencibilidade 8 s','good'); sfx('turbo'); flashScreen(0.4); addScore(1000);
     }else if(playing) toast('O caça foi embora','info');
-    ev.kind=null; ev.next=rand(8,14)*gapMul();
+    ev.kind=null; ev.next=rand(15,24)*gapMul();
   }
 }
 
@@ -3249,7 +3249,7 @@ function finishMajor(playing,perfect,normal){
     if(bossHits===0){addScore(1000); toast(perfect+' · sem batidas +1000','good');}
     else toast(normal,'info');
   }
-  ev.kind=null; ev.next=rand(8,14)*gapMul();
+  ev.kind=null; ev.next=rand(15,24)*gapMul();
 }
 
 /* bomber truck: lobs explosives on the ground and in the air */
@@ -3610,7 +3610,7 @@ function updateEvents(dt,playing){
         else{tx=rand(-(ROAD_HALF-2),ROAD_HALF-2); tz=c.z-rand(40,110);}
         spawnFall('meteor',tx,tz,tx+rand(-25,25),75,tz-rand(30,60),1.5);
       }
-      if(ev.t>=ev.dur){ev.kind=null; ev.next=rand(8,14)*gapMul(); toast('A chuva de meteoros passou','info');}
+      if(ev.t>=ev.dur){ev.kind=null; ev.next=rand(15,24)*gapMul(); toast('A chuva de meteoros passou','info');}
     }
   }
   if(playing && ev.kind && ev.kind!=='meteors' && diffT()>0.4){
@@ -3659,7 +3659,7 @@ function resetEvents(){
   missiles.forEach(function(o){scene.remove(o.m); if(o.ring) scene.remove(o.ring);}); missiles=[];
   if(hero){scene.remove(hero.m); scene.remove(hero.ring); scene.remove(hero.cross); hero.beams.forEach(function(b){scene.remove(b);});}
   falls=[]; rockets=[]; boss=null; bomber=null; hero=null;
-  ev.kind=null; ev.next=12; ev.lastBoss=-99; ev.lastBomber=-99; ev.lastHero=-99; ev.lastMonkey=-99; ev.lastDino=-99; ev.lastJet=-99; ev.lastOcto=-99; ev.prev='';
+  ev.kind=null; ev.next=18; ev.lastBoss=-99; ev.lastBomber=-99; ev.lastHero=-99; ev.lastMonkey=-99; ev.lastDino=-99; ev.lastJet=-99; ev.lastOcto=-99; ev.prev='';
   rocketNext=3; elapsed=0; bossHits=0;
 }
 
