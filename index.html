@@ -110,6 +110,13 @@ body.rot{position:fixed;top:0;left:100%;transform:rotate(90deg);transform-origin
   touch-action:none;cursor:pointer;
 }
 .btn.small{height:38px;font-size:15px}
+@media (pointer:coarse){
+  .steer,.cluster{gap:10px}
+  .steer{grid-template-columns:clamp(84px,13vw,120px) clamp(84px,13vw,120px)}
+  .cluster{grid-template-columns:clamp(112px,17vw,150px) clamp(120px,18vw,160px)}
+  .btn{height:clamp(76px,22vh,104px);font-size:clamp(20px,3.4vh,26px)}
+  .btn.small{height:clamp(54px,15vh,72px);font-size:clamp(17px,2.8vh,22px)}
+}
 .btn.on{background:var(--gas);color:var(--ink)}
 .btn:focus-visible{outline:2px solid var(--gas);outline-offset:2px}
 
