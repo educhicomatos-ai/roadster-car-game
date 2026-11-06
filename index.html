@@ -3613,14 +3613,6 @@ function updateEvents(dt,playing){
       if(ev.t>=ev.dur){ev.kind=null; ev.next=rand(15,24)*gapMul(); toast('A chuva de meteoros passou','info');}
     }
   }
-  if(playing && ev.kind && ev.kind!=='meteors' && diffT()>0.4){
-    ev.dr=(ev.dr||2)-dt;
-    if(ev.dr<=0){
-      ev.dr=rand(1.6,3)/(diffT()*1.6);
-      var tx2=clamp(c.x+rand(-6,6),-(ROAD_HALF-2),ROAD_HALF-2), tz2=c.z-c.speed*1.5+rand(-8,8);
-      spawnFall('meteor',tx2,tz2,tx2+rand(-25,25),75,tz2-rand(30,60),1.5);
-    }
-  }
   updateFalls(dt,playing);
   updateBoss(dt,playing);
   updateBomber(dt,playing);
