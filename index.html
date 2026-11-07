@@ -2294,16 +2294,23 @@ function doSpin(){
   var N=46, F=38, cells=[], i;
   for(i=0;i<N;i++) cells.push(i===F?prize:R[Math.floor(Math.random()*R.length)]);
   strip.innerHTML=cells.map(function(e){return cellHtml(e);}).join(''); strip.style.left='50%'; strip.style.transform='translateX(0px)';
-  var W=reel.clientWidth, target=F*CELLW+CELLW/2, T=4200, t0=performance.now(), lastIdx=-1;
+  var tc=strip.children[F], cw=tc.offsetWidth||CELLW, target=tc.offsetLeft+cw/2, T=4200, t0=performance.now(), lastIdx=-1;
   function step(now){
     var u=Math.min(1,(now-t0)/T), e=1-Math.pow(1-u,4), pos=target*e;
     strip.style.transform='translateX('+(-pos)+'px)';
-    var idx=Math.floor(pos/CELLW); if(idx!==lastIdx){lastIdx=idx; sfx('tick');}
+    var idx=Math.floor(pos/cw); if(idx!==lastIdx){lastIdx=idx; sfx('tick');}
     if(u<1){requestAnimationFrame(step); return;}
+    /* the prize is whatever the marker is really over on screen */
+    var mk=document.querySelector('#reel .mark'), fi=F;
+    if(mk){
+      var mr=mk.getBoundingClientRect(), mx=mr.left+mr.width/2, kids=strip.children, q;
+      for(q=0;q<kids.length;q++){var cr=kids[q].getBoundingClientRect(); if(mx>=cr.left && mx<cr.right){fi=q; break;}}
+    }
+    prize=cells[fi]; target=strip.children[fi].offsetLeft+strip.children[fi].offsetWidth/2;
     var it=lookItem(prize.cat,prize.id), dup=save.own[prize.cat].indexOf(prize.id)>=0, refund=0;
     if(dup){refund=DUP_REFUND[it.r]; if(!save.dev) save.money+=refund;}
     else save.own[prize.cat].push(prize.id);
-    lastWin={cat:prize.cat,id:prize.id,dup:dup,refund:refund}; lastStrip={cells:cells,f:F,x:target}; spinning=false; persist(); refreshMoney();
+    lastWin={cat:prize.cat,id:prize.id,dup:dup,refund:refund}; lastStrip={cells:cells,f:fi,x:target}; spinning=false; persist(); refreshMoney();
     sfx(it.r==='c'?'pickup':'bonus'); buzz(it.r==='l'?200:60);
     garMsg(it.name+' ('+RAR[it.r].n+')'+(dup?' · repetido, reembolso de $ '+refund.toLocaleString('pt-BR'):' adicionado ao inventário.'));
     renderGarage();
