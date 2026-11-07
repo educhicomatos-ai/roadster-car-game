@@ -212,9 +212,27 @@ h1 span{color:var(--gas)}
 .buy{min-width:104px;height:38px;font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--good);border:0;cursor:pointer;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
 .buy:disabled{background:rgba(215,243,255,.18);color:var(--muted);cursor:default}
 .buy.no{background:rgba(255,90,95,.3);color:var(--paper)}
+.rbox{border:1px solid rgba(215,243,255,.2);padding:10px;margin:0 0 12px;background:rgba(10,15,46,.45)}
+.rhead{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:11px;color:var(--muted)}
+.rhead b{font-family:var(--display);letter-spacing:.08em;text-transform:uppercase;font-size:17px;color:var(--paper)}
+.reel{position:relative;overflow:hidden;height:104px;margin:8px 0;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px rgba(215,243,255,.25)}
+.strip{display:flex;position:absolute;left:0;top:0;height:100%;will-change:transform}
+.cell{flex:0 0 82px;width:82px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-right:1px solid rgba(215,243,255,.08);border-bottom:3px solid var(--rc);background:linear-gradient(0deg,color-mix(in srgb,var(--rc) 22%,transparent),transparent 70%);font:500 9px var(--mono);text-align:center;color:var(--paper);padding:4px 2px;overflow:hidden}
+.cell i{display:block;width:34px;height:34px;border-radius:50%;box-shadow:0 0 0 2px rgba(10,15,46,.8),0 0 0 3px var(--rc)}
+.cell em{font-style:normal;color:var(--muted);font-size:8px}
+.cell.mini{width:auto;flex:none;height:72px;position:relative}
+.cell.mini i{width:24px;height:24px}
+.mark{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--gas);box-shadow:0 0 10px var(--gas);pointer-events:none}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px}
+.win{display:flex;align-items:center;gap:12px;margin:8px 0;padding:10px;border:1px solid var(--rc);background:color-mix(in srgb,var(--rc) 16%,rgba(10,15,46,.6));box-shadow:0 0 18px color-mix(in srgb,var(--rc) 45%,transparent)}
+.win i{display:block;width:46px;height:46px;border-radius:50%;flex:none;box-shadow:0 0 0 3px var(--rc)}
+.win div{flex:1;display:grid;gap:2px}.win b{font-family:var(--display);font-size:20px;letter-spacing:.04em;text-transform:uppercase}.win small{font-size:11px;color:var(--muted)}
+.buy.spin{width:100%;margin-top:8px;height:46px;font-size:20px}
+@media (max-height:520px){.shoplist{max-height:50vh}.reel{height:92px;margin:6px 0}.rbox{padding:8px}}
+.odds{font-size:10.5px;line-height:1.6;color:var(--muted);margin:8px 0 0}
 .catlbl{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:12px 0 8px}
 .sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
-.swb{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;background:rgba(10,15,46,.5);border:0;color:var(--paper);cursor:pointer;font:500 10px var(--mono);letter-spacing:.06em;box-shadow:inset 0 0 0 1px rgba(215,243,255,.25)}
+.swb{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;background:rgba(10,15,46,.5);border:0;color:var(--paper);cursor:pointer;font:500 10px var(--mono);letter-spacing:.06em;box-shadow:inset 0 0 0 1.5px var(--rc,rgba(215,243,255,.25))}
 .swb i{display:block;width:34px;height:34px;border-radius:50%;box-shadow:0 0 0 2px rgba(10,15,46,.8),0 0 0 3px rgba(215,243,255,.35)}
 .swb.sel{box-shadow:inset 0 0 0 2px var(--good)}
 .swb span{color:var(--muted)}
@@ -2075,17 +2093,33 @@ var UPG=[
   {id:'magnet',name:'Ímã de power-ups',desc:'Coleta power-ups só um pouco de mais longe (máx. nível 3)',base:600,max:3},
   {id:'clock',name:'Cronômetro estendido',desc:'+5 s no início de cada corrida por nível',base:450}
 ];
+var RAR={c:{n:'Comum',col:'#9aa6c0',w:55},r:{n:'Raro',col:'#3fa0ff',w:29},e:{n:'Épico',col:'#b455ff',w:12},l:{n:'Lendário',col:'#ffb02a',w:4}};
+var RAR_ORDER=['l','e','r','c'], SPIN_COST=900, SPIN_SLOT_MS=2*60*60*1000, QUOTA={c:8,r:8,e:6,l:3}, DUP_REFUND={c:250,r:400,e:650,l:900};
 var LOOK={
-  paint:{title:'Pintura',items:[
-    {id:'white',name:'Branco pérola',c:0xe9edf4,p:0},{id:'red',name:'Vermelho foguete',c:0xd92b3a,p:250},{id:'blue',name:'Azul elétrico',c:0x2a6df0,p:250},
-    {id:'orange',name:'Laranja Marte',c:0xff7a1f,p:300},{id:'green',name:'Verde neon',c:0x20c27a,p:300},{id:'black',name:'Preto carbono',c:0x1b1d26,p:350},
-    {id:'purple',name:'Roxo galáxia',c:0x8a4af0,p:350},{id:'pink',name:'Rosa choque',c:0xff6fb5,p:350},{id:'gold',name:'Dourado',c:0xe6b43a,p:900}]},
-  air:{title:'Cor do ar dos propulsores',items:[
-    {id:'ice',name:'Gelo',c:0xdff6ff,p:0},{id:'cyan',name:'Ciano',c:0x28e1ff,p:200},{id:'magenta',name:'Magenta',c:0xff2fd0,p:200},
-    {id:'lime',name:'Lima',c:0x8dff4a,p:250},{id:'orange',name:'Fogo',c:0xff8a2a,p:250},{id:'red',name:'Vermelho',c:0xff3a3a,p:300},{id:'gold',name:'Dourado',c:0xffd23a,p:350}]},
-  trim:{title:'Detalhes (aerofólio e lanterna)',items:[
-    {id:'stock',name:'Original',c:0x141826,t:0xff3b4a,p:0},{id:'carbon',name:'Carbono e âmbar',c:0x050507,t:0xff8a2a,p:150},
-    {id:'gold',name:'Dourado',c:0xb88a2a,t:0xffd23a,p:200},{id:'ice',name:'Gelo',c:0x3a8fb8,t:0x7fe6ff,p:200},{id:'red',name:'Vermelho',c:0x8f1a22,t:0xff3b4a,p:150}]}
+  paint:{title:'Pintura',tag:'Pintura',items:[
+    {id:'white',name:'Branco pérola',r:'c',c:0xe9edf4},{id:'red',name:'Vermelho foguete',r:'c',c:0xd92b3a},{id:'blue',name:'Azul elétrico',r:'c',c:0x2a6df0},
+    {id:'gray',name:'Cinza grafite',r:'c',c:0x6b7280},{id:'yellow',name:'Amarelo táxi',r:'c',c:0xf2c230},{id:'brown',name:'Café',r:'c',c:0x7a4a2a},
+    {id:'orange',name:'Laranja Marte',r:'r',c:0xff7a1f},{id:'green',name:'Verde neon',r:'r',c:0x20c27a},{id:'black',name:'Preto carbono',r:'r',c:0x1b1d26},
+    {id:'purple',name:'Roxo galáxia',r:'r',c:0x8a4af0},{id:'pink',name:'Rosa choque',r:'r',c:0xff6fb5},{id:'teal',name:'Turquesa',r:'r',c:0x1fb5b0},
+    {id:'navy',name:'Azul-marinho',r:'r',c:0x1a2a6a},{id:'wine',name:'Vinho',r:'r',c:0x7a1f3a},
+    {id:'gold',name:'Dourado',r:'e',c:0xe6b43a},{id:'silver',name:'Prata cromada',r:'e',c:0xcfd6e0},{id:'acid',name:'Verde ácido',r:'e',c:0x9dff2a},
+    {id:'glacier',name:'Gelo azulado',r:'e',c:0x9ad8ff},{id:'sunset',name:'Pôr do sol',r:'e',c:0xff6a4a},
+    {id:'rainbow',name:'Arco-íris',r:'l',c:0xff3a3a,fx:'rainbow'},{id:'void',name:'Vazio cósmico',r:'l',c:0x1a0a40,c2:0x5a2aff,fx:'pulse'},
+    {id:'aurora',name:'Aurora boreal',r:'l',c:0x35ff9a,c2:0x8a4af0,fx:'pulse'},{id:'lava',name:'Lava viva',r:'l',c:0xd91a0a,c2:0xffb02a,fx:'pulse'}]},
+  air:{title:'Cor do ar dos propulsores',tag:'Ar',items:[
+    {id:'ice',name:'Gelo',r:'c',c:0xdff6ff},{id:'cyan',name:'Ciano',r:'c',c:0x28e1ff},{id:'orange',name:'Fogo',r:'c',c:0xff8a2a},
+    {id:'white',name:'Branco',r:'c',c:0xffffff},{id:'yellow',name:'Amarelo',r:'c',c:0xffe65a},
+    {id:'magenta',name:'Magenta',r:'r',c:0xff2fd0},{id:'lime',name:'Lima',r:'r',c:0x8dff4a},{id:'red',name:'Vermelho',r:'r',c:0xff3a3a},
+    {id:'blue',name:'Azul',r:'r',c:0x4a7aff},{id:'violet',name:'Violeta',r:'r',c:0xb46aff},
+    {id:'gold',name:'Dourado',r:'e',c:0xffd23a},{id:'mint',name:'Menta',r:'e',c:0x5affc8},{id:'rose',name:'Rosa neon',r:'e',c:0xff7ad0},{id:'toxic',name:'Tóxico',r:'e',c:0xb8ff1a},
+    {id:'rainbow',name:'Arco-íris',r:'l',c:0xff3a3a,fx:'rainbow'},{id:'plasma',name:'Plasma',r:'l',c:0x28e1ff,c2:0xff2fd0,fx:'pulse'},{id:'inferno',name:'Inferno',r:'l',c:0xff3a1a,c2:0xffe65a,fx:'pulse'}]},
+  trim:{title:'Detalhes (aerofólio e lanterna)',tag:'Detalhe',items:[
+    {id:'stock',name:'Original',r:'c',c:0x141826,t:0xff3b4a},{id:'red',name:'Vermelho',r:'c',c:0x8f1a22,t:0xff3b4a},
+    {id:'steel',name:'Aço',r:'c',c:0x4a5260,t:0xff3b4a},{id:'white',name:'Branco',r:'c',c:0xd8dde6,t:0xff3b4a},
+    {id:'carbon',name:'Carbono e âmbar',r:'r',c:0x050507,t:0xff8a2a},{id:'ice',name:'Gelo',r:'r',c:0x3a8fb8,t:0x7fe6ff},
+    {id:'blue',name:'Azul esportivo',r:'r',c:0x1a3a9a,t:0x4aa0ff},{id:'green',name:'Verde corrida',r:'r',c:0x1a6a3a,t:0x6aff9a},
+    {id:'gold',name:'Dourado',r:'e',c:0xb88a2a,t:0xffd23a},{id:'violet',name:'Roxo místico',r:'e',c:0x4a1a8a,t:0xd08aff},{id:'chrome',name:'Cromado',r:'e',c:0xc0c8d4,t:0xff5a2a},
+    {id:'prism',name:'Prisma',r:'l',c:0x101014,t:0xff3a3a,fx:'rainbow'},{id:'ember',name:'Brasa',r:'l',c:0x1a0a06,t:0xff5a1a,t2:0xffe65a,fx:'pulse'}]}
 };
 function lookItem(cat,id){var a=LOOK[cat].items; for(var i=0;i<a.length;i++) if(a[i].id===id) return a[i]; return a[0];}
 function loadSave(){
@@ -2111,11 +2145,21 @@ function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catc
 function money(v){return save.dev?'∞':'$ '+Math.floor(v).toLocaleString('pt-BR');}
 function upPrice(u){return Math.round(u.base*Math.pow(1.7,up[u.id])/10)*10;}
 function applyUpgrades(){TANK=Math.round(600*(1+0.2*up.tank));}
-var tailBase=0xff3b4a;
+var tailBase=0xff3b4a, curPa=null, curNe=null, curTr=null, hslC=new THREE.Color(), mixA=new THREE.Color(), mixB=new THREE.Color();
+function fxHex(h,h2,fx,t){
+  if(fx==='rainbow'){hslC.setHSL((t*0.12)%1,0.85,0.55); return hslC.getHex();}
+  mixA.setHex(h); mixB.setHex(h2); mixA.lerp(mixB,0.5+0.5*Math.sin(t*2.2)); return mixA.getHex();
+}
 function applyLook(){
-  var pa=lookItem('paint',save.sel.paint), ne=lookItem('air',save.sel.air), tr=lookItem('trim',save.sel.trim);
-  player.userData.paint.color.setHex(pa.c); player.userData.dark.color.setHex(tr.c); tailBase=tr.t; player.userData.tail.color.setHex(tr.t);
-  airColor=ne.c;
+  curPa=lookItem('paint',save.sel.paint); curNe=lookItem('air',save.sel.air); curTr=lookItem('trim',save.sel.trim);
+  player.userData.paint.color.setHex(curPa.c); player.userData.dark.color.setHex(curTr.c); tailBase=curTr.t||0xff3b4a; player.userData.tail.color.setHex(tailBase);
+  airColor=curNe.c;
+}
+function lookFx(t){
+  if(!curPa) return;
+  if(curPa.fx) player.userData.paint.color.setHex(fxHex(curPa.c,curPa.c2,curPa.fx,t));
+  if(curNe.fx) airColor=fxHex(curNe.c,curNe.c2,curNe.fx,t);
+  if(curTr.fx) tailBase=fxHex(curTr.t,curTr.t2,curTr.fx,t);
 }
 function refreshMoney(){
   ['homeMoney','garMoney'].forEach(function(id){$(id).textContent=money(save.money);});
@@ -2173,6 +2217,101 @@ function showSheet(id){
   if(id==='garageSheet') renderGarage();
   if(id==='consoleSheet'){setTimeout(function(){var i=$('cmdIn'); i.focus();},30);}
 }
+function hx(n){return '#'+('000000'+n.toString(16)).slice(-6);}
+function swatchCss(it,cat){
+  if(it.fx==='rainbow') return 'conic-gradient(#ff3a3a,#ffd23a,#3aff7a,#3ad0ff,#8a4aff,#ff3ad0,#ff3a3a)';
+  if(it.fx==='pulse') return 'linear-gradient(135deg,'+hx(it.c)+','+hx(it.c2||it.t2||it.c)+')';
+  if(cat==='trim') return 'linear-gradient(135deg,'+hx(it.c)+' 50%,'+hx(it.t)+' 50%)';
+  return hx(it.c);
+}
+function rng(seed){return function(){seed|=0; seed=seed+0x6D2B79F5|0; var t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296;};}
+var rouCache={slot:-1,list:[]};
+function slotNow(){return Math.floor(Date.now()/SPIN_SLOT_MS);}
+/* the wheel holds at most 25 items and is the same for everyone; it is reshuffled every 2 hours */
+function roulette(slot){
+  if(rouCache.slot===slot) return rouCache.list;
+  var list=[];
+  RAR_ORDER.forEach(function(r,ri){
+    var pool=[]; for(var cat in LOOK) LOOK[cat].items.forEach(function(it,ix){if(ix>0 && it.r===r) pool.push({cat:cat,id:it.id});});
+    var rnd=rng(slot*7919+ri*104729+13);
+    for(var i=pool.length-1;i>0;i--){var j=Math.floor(rnd()*(i+1)); var tmp=pool[i]; pool[i]=pool[j]; pool[j]=tmp;}
+    list=list.concat(pool.slice(0,QUOTA[r]));
+  });
+  rouCache={slot:slot,list:list.slice(0,25)};
+  return rouCache.list;
+}
+function cellHtml(e,cls){
+  var it=lookItem(e.cat,e.id), rc=RAR[it.r].col;
+  return '<div class="'+(cls||'cell')+'" style="--rc:'+rc+'"><i style="background:'+swatchCss(it,e.cat)+'"></i><span>'+it.name+'</span><em>'+LOOK[e.cat].tag+'</em></div>';
+}
+var spinning=false, lastWin=null, CELLW=82;
+function timeLeftTxt(){
+  var ms=(slotNow()+1)*SPIN_SLOT_MS-Date.now(), sec=Math.max(0,Math.floor(ms/1000)), p=function(n){return ('0'+n).slice(-2);};
+  return p(Math.floor(sec/3600))+':'+p(Math.floor(sec/60)%60)+':'+p(sec%60);
+}
+function renderLookTab(){
+  var R=roulette(slotNow()), h='', cat;
+  h+='<div class="rbox"><div class="rhead"><b>Roleta de personalizações</b><span>Muda em <span id="rtimer">'+timeLeftTxt()+'</span></span></div>';
+  h+='<button class="buy spin'+((!canPay(SPIN_COST))?' no':'')+'" type="button" data-act="spin"'+(spinning?' disabled':'')+'>Girar roleta · '+(save.dev?'Grátis':'$ '+SPIN_COST.toLocaleString('pt-BR'))+'</button>';
+  h+='<div class="reel" id="reel"><div class="strip" id="strip">'+R.map(function(e){return cellHtml(e);}).join('')+'</div><i class="mark"></i></div>';
+  if(lastWin){
+    var wi=lookItem(lastWin.cat,lastWin.id), rc=RAR[wi.r].col;
+    h+='<div class="win" style="--rc:'+rc+'"><i style="background:'+swatchCss(wi,lastWin.cat)+'"></i><div><small>'+RAR[wi.r].n+' · '+LOOK[lastWin.cat].tag+'</small><b>'+wi.name+'</b><small>'+(lastWin.dup?'Repetido! Você recebeu $ '+lastWin.refund.toLocaleString('pt-BR')+' de volta.':'Novo no inventário!')+'</small></div>'
+      +(save.sel[lastWin.cat]===lastWin.id?'':'<button class="buy" type="button" data-act="look" data-cat="'+lastWin.cat+'" data-id="'+lastWin.id+'">Equipar</button>')+'</div>';
+  }
+  h+='<p class="odds">Chances: '+RAR_ORDER.slice().reverse().map(function(r){return '<span style="color:'+RAR[r].col+'">'+RAR[r].n+' '+RAR[r].w+'%</span>';}).join(' · ')+'<br>Quanto mais raro, menos itens da roleta e mais difícil de sair.</p></div>';
+  h+='<p class="catlbl">Itens na roleta agora ('+R.length+')</p><div class="rgrid">'+R.map(function(e){return cellHtml(e,'cell mini');}).join('')+'</div>';
+  h+='<p class="catlbl" style="margin-top:16px">Seu inventário</p>';
+  for(cat in LOOK){
+    h+='<p class="catlbl">'+LOOK[cat].title+'</p><div class="sw">';
+    var own=LOOK[cat].items.filter(function(it){return save.own[cat].indexOf(it.id)>=0;});
+    own.sort(function(a,b){return RAR_ORDER.indexOf(a.r)-RAR_ORDER.indexOf(b.r);});
+    own.forEach(function(it){
+      var sel=save.sel[cat]===it.id;
+      h+='<button class="swb'+(sel?' sel':'')+'" style="--rc:'+RAR[it.r].col+'" type="button" data-act="look" data-cat="'+cat+'" data-id="'+it.id+'"><i style="background:'+swatchCss(it,cat)+'"></i>'+it.name+'<span>'+RAR[it.r].n+(sel?' · em uso':'')+'</span></button>';
+    });
+    h+='</div>';
+  }
+  return h;
+}
+function pickPrize(R){
+  var tiers=RAR_ORDER.filter(function(r){return R.some(function(e){return lookItem(e.cat,e.id).r===r;});}), tot=0;
+  tiers.forEach(function(r){tot+=RAR[r].w;});
+  var x=Math.random()*tot, tier=tiers[tiers.length-1];
+  for(var i=0;i<tiers.length;i++){x-=RAR[tiers[i]].w; if(x<0){tier=tiers[i]; break;}}
+  var cand=R.filter(function(e){return lookItem(e.cat,e.id).r===tier;});
+  return cand[Math.floor(Math.random()*cand.length)];
+}
+function doSpin(){
+  if(spinning) return;
+  if(!canPay(SPIN_COST)){garMsg('Dinheiro insuficiente. Jogue mais corridas para ganhar.'); sfx('hit'); return;}
+  var R=roulette(slotNow()), prize=pickPrize(R), strip=$('strip'), reel=$('reel');
+  if(!strip||!reel) return;
+  spinning=true; lastWin=null; pay(SPIN_COST); persist(); refreshMoney(); garMsg('');
+  document.querySelectorAll('#shopList [data-act]').forEach(function(b){b.disabled=true;});
+  var N=46, F=38, cells=[], i;
+  for(i=0;i<N;i++) cells.push(i===F?prize:R[Math.floor(Math.random()*R.length)]);
+  strip.innerHTML=cells.map(function(e){return cellHtml(e);}).join('');
+  var W=reel.clientWidth, jitter=(Math.random()-0.5)*CELLW*0.6, target=F*CELLW+CELLW/2-W/2+jitter, T=4200, t0=performance.now(), lastIdx=-1;
+  function step(now){
+    var u=Math.min(1,(now-t0)/T), e=1-Math.pow(1-u,4), pos=target*e;
+    strip.style.transform='translateX('+(-pos)+'px)';
+    var idx=Math.floor((pos+W/2)/CELLW); if(idx!==lastIdx){lastIdx=idx; sfx('tick');}
+    if(u<1){requestAnimationFrame(step); return;}
+    var it=lookItem(prize.cat,prize.id), dup=save.own[prize.cat].indexOf(prize.id)>=0, refund=0;
+    if(dup){refund=DUP_REFUND[it.r]; if(!save.dev) save.money+=refund;}
+    else save.own[prize.cat].push(prize.id);
+    lastWin={cat:prize.cat,id:prize.id,dup:dup,refund:refund}; spinning=false; persist(); refreshMoney();
+    sfx(it.r==='c'?'pickup':'bonus'); buzz(it.r==='l'?200:60);
+    garMsg(it.name+' ('+RAR[it.r].n+')'+(dup?' · repetido, reembolso de $ '+refund.toLocaleString('pt-BR'):' adicionado ao inventário.'));
+    renderGarage();
+  }
+  requestAnimationFrame(step);
+}
+setInterval(function(){
+  var el=$('rtimer'); if(!el||$('garageSheet').hidden||garTab!=='look'||spinning) return;
+  if(rouCache.slot!==slotNow()) renderGarage(); else el.textContent=timeLeftTxt();
+},1000);
 function garMsg(t){$('garMsg').textContent=t||'';}
 function canPay(p){return save.dev || save.money>=p;}
 function pay(p){if(!save.dev) save.money-=p;}
@@ -2188,15 +2327,7 @@ function renderGarage(){
         +'<button class="buy'+((!max&&!ok)?' no':'')+'" type="button" data-act="buyup" data-id="'+u.id+'"'+(max?' disabled':'')+'>'+(max?'Máximo':(save.dev?'Grátis':'$ '+pr.toLocaleString('pt-BR')))+'</button></div>';
     });
   }else{
-    for(var cat in LOOK){
-      h+='<p class="catlbl">'+LOOK[cat].title+'</p><div class="sw">';
-      LOOK[cat].items.forEach(function(it){
-        var own=save.own[cat].indexOf(it.id)>=0, sel=save.sel[cat]===it.id;
-        var lab=sel?'Equipado':(own?'Equipar':(save.dev?'Grátis':'$ '+it.p.toLocaleString('pt-BR')));
-        h+='<button class="swb'+(sel?' sel':'')+'" type="button" data-act="look" data-cat="'+cat+'" data-id="'+it.id+'"><i style="background:#'+('000000'+it.c.toString(16)).slice(-6)+'"></i>'+it.name+'<span>'+lab+'</span></button>';
-      });
-      h+='</div>';
-    }
+    h=renderLookTab();
   }
   $('shopList').innerHTML=h;
   refreshMoney();
@@ -2205,6 +2336,7 @@ $('garageSheet').addEventListener('click',function(e){
   var b=e.target.closest?e.target.closest('[data-act]'):null; if(!b) return;
   var act=b.getAttribute('data-act'), id=b.getAttribute('data-id'), cat=b.getAttribute('data-cat');
   initAudio();
+  if(spinning) return;
   if(act==='tab'){garTab=id; garMsg(''); renderGarage(); return;}
   if(act==='buyup'){
     var u=UPG.filter(function(x){return x.id===id;})[0], pr=upPrice(u);
@@ -2212,13 +2344,12 @@ $('garageSheet').addEventListener('click',function(e){
     if(!canPay(pr)){garMsg('Dinheiro insuficiente. Jogue mais corridas para ganhar.'); sfx('hit'); return;}
     pay(pr); up[id]++; persist(); applyUpgrades(); garMsg(u.name+' nível '+up[id]+' comprado.'); sfx('pickup'); renderGarage(); return;
   }
+  if(act==='spin'){doSpin(); return;}
   if(act==='look'){
+    if(spinning) return;
     var it=lookItem(cat,id);
-    if(save.own[cat].indexOf(id)<0){
-      if(!canPay(it.p)){garMsg('Dinheiro insuficiente. Jogue mais corridas para ganhar.'); sfx('hit'); return;}
-      pay(it.p); save.own[cat].push(id); sfx('pickup'); garMsg(it.name+' comprado e equipado.');
-    }else garMsg(it.name+' equipado.');
-    save.sel[cat]=id; persist(); applyLook(); renderGarage();
+    if(save.own[cat].indexOf(id)<0) return;
+    save.sel[cat]=id; persist(); applyLook(); garMsg(it.name+' equipado.'); sfx('pickup'); renderGarage();
   }
 });
 function conLog(html){var l=$('cmdLog'); l.innerHTML=html;}
@@ -2967,7 +3098,7 @@ function stickOcto(o,playing){
   scene.remove(o.m); if(o.ring) scene.remove(o.ring); o.dead=true;
   burst(o.x,0.8,o.z,16,0xb07ae8,10,1.2);
   if(!playing) return;
-  if(hurt('Polvo grudou',4,0.25)){
+  if(hurt('Polvo grudou',4,0.6)){
     bossHits++; c.slow=5; sfx('splat');
     if(stuckO.length<3){
       var m=makeOcto(0.7,false); m.position.set(rand(-0.5,0.5),1.05,rand(-1.6,-0.4)); m.rotation.y=rand(0,TAU); player.add(m); stuckO.push(m);
@@ -3716,7 +3847,7 @@ function update(dt){
   /* speed */
   var offroad=c.grounded && Math.abs(c.x)>ROAD_HALF+0.5;
   var cruise=(offroad?22:(playing?46:34))+(c.nitro>0?10:0)+((playing&&monkey&&!offroad)?43:0)+(c.turbo>0?54:0)+(offroad?0:up.motor*2.5);
-  if(c.slow>0) cruise*=0.25;
+  if(c.slow>0) cruise*=0.6;
   var a;
   if(wantBoost) a=62;
   else if(inp.brake) a=c.grounded?-44:-14;
@@ -3942,6 +4073,7 @@ function frame(now){
   var dt=Math.min(0.05,Math.max(0.001,(now-last)/1000)); last=now;
   var ts=1; if(fx.hit>0){ts=0.12; fx.hit-=dt;}
   if(!paused) update(dt*ts);
+  lookFx(now/1000);
   renderer.render(scene,camera);
 }
 requestAnimationFrame(frame);
