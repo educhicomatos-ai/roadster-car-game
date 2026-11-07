@@ -1735,7 +1735,6 @@ var dustHex=0xcdb89a, tmpDust=new THREE.Color(), flash=0, flashSec=false, nextBo
 var sketchClouds=[], skCls=false;
 /* ---------- sketch world: black-and-white ink drawing, billboard trees, outlined everything ---------- */
 var sketchU={value:0};
-var skPoolStart=POOLS.length;
 (function(){
   /* the ground loses its speckled texture inside this zone, so the paper stays clean */
   ground.material.onBeforeCompile=function(sh){
@@ -1758,49 +1757,61 @@ var skPoolStart=POOLS.length;
     ink(g,3); g.beginPath(); g.moveTo(x-wd*.1,bot-4); g.lineTo(x-wd*.05,bot-40); g.moveTo(x+wd*.3,bot-10); g.lineTo(x+wd*.2,bot-60); g.stroke();
   }
   function hatch(g,x,y,w,h,n){ink(g,2.5); g.beginPath(); for(var i=0;i<n;i++){g.moveTo(x+i*w/n,y+h); g.lineTo(x+i*w/n+w*.18,y);} g.stroke();}
-  function treeTex(kind){
-    var cv=cv2(256,512), g=cv.getContext('2d');
-    if(kind===0){ /* round crown */
-      trunk(g,128,300,508,16);
-      g.fillStyle='#fff'; ink(g,7); scallop(g,128,210,104,118,11,1.22); g.fill(); g.stroke();
-      ink(g,4); g.beginPath(); g.moveTo(128,300); g.lineTo(128,230); g.moveTo(128,262); g.lineTo(96,222); g.moveTo(128,250); g.lineTo(164,210); g.stroke();
-      hatch(g,150,260,60,50,5); hatch(g,60,120,40,40,3);
-      ink(g,3.5); [[88,150],[150,130],[110,190],[180,175]].forEach(function(p){g.beginPath(); g.arc(p[0],p[1],14,Math.PI*.15,Math.PI*.9); g.stroke();});
-    }else if(kind===1){ /* tall oval crown with a centre vein, like the pencil sketch */
-      trunk(g,128,400,508,13);
-      g.fillStyle='#fff'; ink(g,7); scallop(g,128,210,78,190,13,1.1); g.fill(); g.stroke();
-      ink(g,4); g.beginPath(); g.moveTo(128,404); g.lineTo(128,60); g.stroke();
-      ink(g,3); g.beginPath(); for(var y=110;y<380;y+=36){g.moveTo(128,y+30); g.lineTo(96,y); g.moveTo(128,y+30); g.lineTo(160,y);} g.stroke();
-      hatch(g,150,240,46,70,4);
-    }else if(kind===2){ /* pine */
-      trunk(g,128,430,508,14);
-      [[330,90,200],[230,70,140],[130,50,80]].forEach(function(t){
-        var by=t[0],hw=t[1],hh=t[2];
-        g.fillStyle='#fff'; ink(g,7); g.beginPath(); g.moveTo(128,by-hh);
-        g.lineTo(128+hw,by+30); g.quadraticCurveTo(128+hw*.5,by+55,128,by+34); g.quadraticCurveTo(128-hw*.5,by+55,128-hw,by+30); g.closePath(); g.fill(); g.stroke();
-        hatch(g,128+hw*.1,by-hh*.3,hw*.6,hh*.4,4);
-      });
-    }else{ /* bush */
-      g.fillStyle='#fff'; ink(g,7); scallop(g,128,430,112,70,8,1.26); g.fill(); g.stroke();
-      ink(g,4); [[80,420],[140,400],[180,440],[110,455]].forEach(function(p){g.beginPath(); g.arc(p[0],p[1],14,Math.PI*.1,Math.PI*.9); g.stroke();});
-      hatch(g,150,450,70,40,5);
-    }
-    var t=new THREE.CanvasTexture(cv); t.anisotropy=4; return t;
+  /* 3D cartoon trees: white lit volumes plus a black, inside-out shell that draws the outline */
+  var gSph=new THREE.SphereGeometry(1,14,10), gCone=new THREE.ConeGeometry(1,1,10), gCyl=new THREE.CylinderGeometry(1,1,1,8);
+  var OL=0.34;
+  function flipGeo(g){
+    ['position','normal','color','uv'].forEach(function(n){
+      var a=g.attributes[n]; if(!a) return; var sz=a.itemSize, arr=a.array;
+      for(var t=0;t<a.count;t+=3){for(var k=0;k<sz;k++){var i1=(t+1)*sz+k, i2=(t+2)*sz+k, tmp=arr[i1]; arr[i1]=arr[i2]; arr[i2]=tmp;}}
+    });
+    return g;
   }
-  var TM=[], TS=[[11,22],[7.5,24],[9,22],[7,14]];
-  for(var q=0;q<4;q++) TM.push(new THREE.SpriteMaterial({map:treeTex(q),alphaTest:0.5,transparent:false,fog:true}));
-  function mkTree(kind){var sp=new THREE.Sprite(TM[kind]); sp.center.set(0.5,0.015); return sp;}
-  function sizeTree(it,kind,r){var s=TS[kind], k=0.8+r*0.5; it.o.scale.set(s[0]*k,s[1]*k*(0.96+r*0.1),1);}
-  var KINDS=[0,1,2,0,1,3];
+  function joinGeo(a,b){
+    var out=new THREE.BufferGeometry();
+    ['position','normal','color','uv'].forEach(function(n){
+      var x=a.attributes[n], y=b.attributes[n], arr=new Float32Array(x.array.length+y.array.length); arr.set(x.array,0); arr.set(y.array,x.array.length);
+      out.setAttribute(n,new THREE.BufferAttribute(arr,x.itemSize));
+    });
+    return out;
+  }
+  /* shapes: [geo, x, y, z, sx, sy, sz, colour] */
+  function inkTree(shapes){
+    var fill=[], shell=[];
+    shapes.forEach(function(p){
+      fill.push(part(p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]));
+      var o2=p[8]||OL; shell.push(part(p[0],p[1],p[2],p[3],p[4]+o2,p[5]+o2,p[6]+o2,0x111111));
+    });
+    return joinGeo(mergeParts(fill),flipGeo(mergeParts(shell)));
+  }
+  function roundTree(r0){
+    var sh=[[gCyl,0,2.4,0,0.5,4.8,0.5,0xcfcfcf,0.14],[gSph,0,7.6,0,3.1,2.8,3.1,0xffffff]];
+    for(var q=0;q<6;q++){var a=q*TAU/6+r0; sh.push([gSph,Math.cos(a)*2.4,6.6+Math.sin(q*2.1+r0)*1.2,Math.sin(a)*2.4,1.7,1.5,1.7,q%2?0xffffff:0xeeeeee]);}
+    sh.push([gSph,0.4,9.9,0.2,1.9,1.5,1.9,0xffffff]);
+    return inkTree(sh);
+  }
+  function tallTree(){
+    return inkTree([[gCyl,0,2.2,0,0.45,4.4,0.45,0xcfcfcf,0.14],[gSph,0,9.6,0,2.2,6.6,2.2,0xffffff],[gSph,0.7,7.0,0.3,1.5,3.2,1.5,0xeeeeee],[gSph,-0.6,11.4,-0.2,1.4,2.8,1.4,0xffffff]]);
+  }
+  function pineTree(){
+    return inkTree([[gCyl,0,1.6,0,0.45,3.2,0.45,0xcfcfcf,0.14],[gCone,0,5.4,0,3.4,5.2,3.4,0xffffff],[gCone,0,8.4,0,2.7,4.6,2.7,0xeeeeee],[gCone,0,11.2,0,1.9,4.2,1.9,0xffffff]]);
+  }
+  function bushTree(){
+    return inkTree([[gSph,0,1.1,0,1.9,1.3,1.7,0xffffff],[gSph,1.5,0.8,0.5,1.2,0.95,1.2,0xeeeeee],[gSph,-1.4,0.8,-0.3,1.2,0.9,1.2,0xffffff]]);
+  }
+  var TG=[roundTree(0),roundTree(1.3),tallTree(),pineTree(),roundTree(2.4),bushTree()];
+  var TW=[1,1,1,1,1,1], KINDS=[0,2,3,1,4,2,0,5];
+  function mkTree(i2){return new THREE.Mesh(TG[KINDS[i2%8]],matV);}
+  function treeScale(it,kd,r){var k=(kd===5?0.8:0.85)+r*0.5; it.o.scale.set(k,k*(0.95+r*0.12),k);}
   addLinear({biome:8,L:18,xs:[-(ROAD_HALF+8),ROAD_HALF+8],
-    mk:function(i2){return mkTree(KINDS[i2%6]);},
+    mk:mkTree,
     setup:function(it,k,s){
-      var kd=KINDS[Math.floor(hash2(k,s+3)*6)]; it.o.material=TM[kd];
+      var kd=KINDS[Math.floor(hash2(k,s+3)*8)]; it.o.geometry=TG[kd];
       if(hash2(k,s+9)<0.2){it.o.visible=false; return;}
-      it.o.position.x+=(s?1:-1)*hash2(k,s+1)*9; it.o.position.z+=(hash2(k,s+2)-0.5)*8; sizeTree(it,kd,hash2(k,s+5));
+      it.o.position.x+=(s?1:-1)*hash2(k,s+1)*9; it.o.position.z+=(hash2(k,s+2)-0.5)*8; it.o.rotation.y=hash2(k,s+4)*TAU; treeScale(it,kd,hash2(k,s+5));
     }});
-  addPool({biome:8,n:50,mk:function(i2){return mkTree(KINDS[i2%6]);},near:48,far:150,dens:0.09,
-    setup:function(it){var kd=KINDS[(Math.random()*6)|0]; it.o.material=TM[kd]; sizeTree(it,kd,Math.random()*1.2);}});
+  addPool({biome:8,n:50,mk:mkTree,near:48,far:150,dens:0.09,
+    setup:function(it){var kd=KINDS[(Math.random()*8)|0]; it.o.geometry=TG[kd]; treeScale(it,kd,Math.random()*1.2);}});
   /* ink-drawn city blocks in some stretches */
   var ft=(function(){
     var S=256, cell=S/4, cv=cv2(S,S), g=cv.getContext('2d'), ix, iy;
@@ -1863,7 +1874,8 @@ var skPoolStart=POOLS.length;
   }
 })();
 /* layer 1 = scenery and road, which get the ink treatment; cars, events and effects stay on layer 0 and keep their colours */
-POOLS.slice(skPoolStart).forEach(function(pl){pl.items.forEach(function(it){it.o.layers.set(1);});});
+POOLS.forEach(function(pl){pl.items.forEach(function(it){it.o.layers.set(1);});});
+[rainLines,leafPts].forEach(function(o){o.layers.set(1);}); edgeGlow.forEach(function(o){o.layers.set(1);});
 sky.traverse(function(o){o.layers.set(1);}); ground.layers.set(1); road.layers.set(1);
 posts.forEach(function(p){p.m.traverse(function(o){o.layers.set(1);});}); rails.forEach(function(r){r.layers.set(1);});
 
@@ -4489,9 +4501,9 @@ function postInit(){
       ' float il=1.0/vz(vUv-vec2(px.x,0.0)), ir=1.0/vz(vUv+vec2(px.x,0.0)), iu=1.0/vz(vUv+vec2(0.0,px.y)), id=1.0/vz(vUv-vec2(0.0,px.y));',
       ' float lap=(abs(il+ir-2.0*ic)+abs(iu+id-2.0*ic))/max(ic,1e-5);',
       ' float e=smoothstep(0.1,0.22,lap);',
-      ' float t0=tl(vUv), g=smoothstep(0.2,0.3,abs(tl(vUv+vec2(px.x,0.0))-t0)+abs(tl(vUv+vec2(0.0,px.y))-t0));',
+      ' float t0=tl(vUv);',
       ' float fade=1.0-smoothstep(fogF*0.5,fogF*0.92,zc);',
-      ' float line=max(e,g)*fade;',
+      ' float line=e*fade;',
       ' float gray=t0*(1.0-line);',
       ' vec4 ex=texture2D(tE,vUv); vec3 sty=mix(col,vec3(gray),k);',
       ' gl_FragColor=vec4(ex.rgb+(1.0-ex.a)*sty,1.0);',
