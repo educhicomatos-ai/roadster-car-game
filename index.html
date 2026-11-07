@@ -220,6 +220,7 @@ h1 span{color:var(--gas)}
 .cell{flex:0 0 82px;width:82px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-right:1px solid rgba(215,243,255,.08);border-bottom:3px solid var(--rc);background:linear-gradient(0deg,color-mix(in srgb,var(--rc) 22%,transparent),transparent 70%);font:500 9px var(--mono);text-align:center;color:var(--paper);padding:4px 2px;overflow:hidden}
 .cell i{display:block;width:34px;height:34px;border-radius:50%;box-shadow:0 0 0 2px rgba(10,15,46,.8),0 0 0 3px var(--rc)}
 .cell em{font-style:normal;color:var(--muted);font-size:8px}
+.cell.hit{box-shadow:inset 0 0 0 2px var(--rc),0 0 16px var(--rc);background:linear-gradient(0deg,color-mix(in srgb,var(--rc) 40%,transparent),transparent 80%)}
 .cell.mini{width:auto;flex:none;height:72px;position:relative}
 .cell.mini i{width:24px;height:24px}
 .mark{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--gas);box-shadow:0 0 10px var(--gas);pointer-events:none}
@@ -2244,7 +2245,7 @@ function cellHtml(e,cls){
   var it=lookItem(e.cat,e.id), rc=RAR[it.r].col;
   return '<div class="'+(cls||'cell')+'" style="--rc:'+rc+'"><i style="background:'+swatchCss(it,e.cat)+'"></i><span>'+it.name+'</span><em>'+LOOK[e.cat].tag+'</em></div>';
 }
-var spinning=false, lastWin=null, CELLW=82;
+var spinning=false, lastWin=null, lastStrip=null, CELLW=82;
 function timeLeftTxt(){
   var ms=(slotNow()+1)*SPIN_SLOT_MS-Date.now(), sec=Math.max(0,Math.floor(ms/1000)), p=function(n){return ('0'+n).slice(-2);};
   return p(Math.floor(sec/3600))+':'+p(Math.floor(sec/60)%60)+':'+p(sec%60);
@@ -2253,7 +2254,8 @@ function renderLookTab(){
   var R=roulette(slotNow()), h='', cat;
   h+='<div class="rbox"><div class="rhead"><b>Roleta de personalizações</b><span>Muda em <span id="rtimer">'+timeLeftTxt()+'</span></span></div>';
   h+='<button class="buy spin'+((!canPay(SPIN_COST))?' no':'')+'" type="button" data-act="spin"'+(spinning?' disabled':'')+'>Girar roleta · '+(save.dev?'Grátis':'$ '+SPIN_COST.toLocaleString('pt-BR'))+'</button>';
-  h+='<div class="reel" id="reel"><div class="strip" id="strip">'+R.map(function(e){return cellHtml(e);}).join('')+'</div><i class="mark"></i></div>';
+  if(lastStrip) h+='<div class="reel" id="reel"><div class="strip" id="strip" style="left:50%;transform:translateX(-'+lastStrip.x+'px)">'+lastStrip.cells.map(function(e,i){return cellHtml(e,i===lastStrip.f?'cell hit':'cell');}).join('')+'</div><i class="mark"></i></div>';
+  else h+='<div class="reel" id="reel"><div class="strip" id="strip">'+R.map(function(e){return cellHtml(e);}).join('')+'</div><i class="mark"></i></div>';
   if(lastWin){
     var wi=lookItem(lastWin.cat,lastWin.id), rc=RAR[wi.r].col;
     h+='<div class="win" style="--rc:'+rc+'"><i style="background:'+swatchCss(wi,lastWin.cat)+'"></i><div><small>'+RAR[wi.r].n+' · '+LOOK[lastWin.cat].tag+'</small><b>'+wi.name+'</b><small>'+(lastWin.dup?'Repetido! Você recebeu $ '+lastWin.refund.toLocaleString('pt-BR')+' de volta.':'Novo no inventário!')+'</small></div>'
@@ -2287,21 +2289,21 @@ function doSpin(){
   if(!canPay(SPIN_COST)){garMsg('Dinheiro insuficiente. Jogue mais corridas para ganhar.'); sfx('hit'); return;}
   var R=roulette(slotNow()), prize=pickPrize(R), strip=$('strip'), reel=$('reel');
   if(!strip||!reel) return;
-  spinning=true; lastWin=null; pay(SPIN_COST); persist(); refreshMoney(); garMsg('');
+  spinning=true; lastWin=null; lastStrip=null; pay(SPIN_COST); persist(); refreshMoney(); garMsg('');
   document.querySelectorAll('#shopList [data-act]').forEach(function(b){b.disabled=true;});
   var N=46, F=38, cells=[], i;
   for(i=0;i<N;i++) cells.push(i===F?prize:R[Math.floor(Math.random()*R.length)]);
-  strip.innerHTML=cells.map(function(e){return cellHtml(e);}).join('');
-  var W=reel.clientWidth, jitter=(Math.random()-0.5)*CELLW*0.6, target=F*CELLW+CELLW/2-W/2+jitter, T=4200, t0=performance.now(), lastIdx=-1;
+  strip.innerHTML=cells.map(function(e){return cellHtml(e);}).join(''); strip.style.left='50%'; strip.style.transform='translateX(0px)';
+  var W=reel.clientWidth, target=F*CELLW+CELLW/2, T=4200, t0=performance.now(), lastIdx=-1;
   function step(now){
     var u=Math.min(1,(now-t0)/T), e=1-Math.pow(1-u,4), pos=target*e;
     strip.style.transform='translateX('+(-pos)+'px)';
-    var idx=Math.floor((pos+W/2)/CELLW); if(idx!==lastIdx){lastIdx=idx; sfx('tick');}
+    var idx=Math.floor(pos/CELLW); if(idx!==lastIdx){lastIdx=idx; sfx('tick');}
     if(u<1){requestAnimationFrame(step); return;}
     var it=lookItem(prize.cat,prize.id), dup=save.own[prize.cat].indexOf(prize.id)>=0, refund=0;
     if(dup){refund=DUP_REFUND[it.r]; if(!save.dev) save.money+=refund;}
     else save.own[prize.cat].push(prize.id);
-    lastWin={cat:prize.cat,id:prize.id,dup:dup,refund:refund}; spinning=false; persist(); refreshMoney();
+    lastWin={cat:prize.cat,id:prize.id,dup:dup,refund:refund}; lastStrip={cells:cells,f:F,x:target}; spinning=false; persist(); refreshMoney();
     sfx(it.r==='c'?'pickup':'bonus'); buzz(it.r==='l'?200:60);
     garMsg(it.name+' ('+RAR[it.r].n+')'+(dup?' · repetido, reembolso de $ '+refund.toLocaleString('pt-BR'):' adicionado ao inventário.'));
     renderGarage();
@@ -2310,7 +2312,7 @@ function doSpin(){
 }
 setInterval(function(){
   var el=$('rtimer'); if(!el||$('garageSheet').hidden||garTab!=='look'||spinning) return;
-  if(rouCache.slot!==slotNow()) renderGarage(); else el.textContent=timeLeftTxt();
+  if(rouCache.slot!==slotNow()){lastStrip=null; renderGarage();} else el.textContent=timeLeftTxt();
 },1000);
 function garMsg(t){$('garMsg').textContent=t||'';}
 function canPay(p){return save.dev || save.money>=p;}
