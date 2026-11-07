@@ -1735,6 +1735,7 @@ var dustHex=0xcdb89a, tmpDust=new THREE.Color(), flash=0, flashSec=false, nextBo
 var sketchClouds=[], skCls=false;
 /* ---------- sketch world: black-and-white ink drawing, billboard trees, outlined everything ---------- */
 var sketchU={value:0};
+var skPoolStart=POOLS.length;
 (function(){
   /* the ground loses its speckled texture inside this zone, so the paper stays clean */
   ground.material.onBeforeCompile=function(sh){
@@ -1861,6 +1862,9 @@ var sketchU={value:0};
     s2.scale.set(s2.userData.sc,s2.userData.sc*0.5,1); s2.position.set(s2.userData.x,s2.userData.y,-830); s2.renderOrder=-1; s2.visible=false; sky.add(s2); sketchClouds.push(s2);
   }
 })();
+/* layer 1 = scenery that gets the ink treatment; the road, cars, events and effects stay on layer 0 and keep their colours */
+POOLS.slice(skPoolStart).forEach(function(pl){pl.items.forEach(function(it){it.o.layers.set(1);});});
+sky.traverse(function(o){o.layers.set(1);}); ground.layers.set(1);
 
 function envApply(dt,t){
   var d=Math.max(0,-c.z), k=Math.floor(d/ZONE_LEN), into=d-k*ZONE_LEN;
@@ -4468,13 +4472,13 @@ function update(dt){
 
 
 /* ---------- ink post-process: outlines + black-and-white tones, used only in the sketch zone ---------- */
-var post={ok:true,rt:null,w:0,h:0,scene:null,cam:null,mat:null};
+var post={ok:true,rt:null,rt2:null,w:0,h:0,scene:null,cam:null,mat:null};
 function postInit(){
   post.mat=new THREE.ShaderMaterial({
-    uniforms:{tC:{value:null},tD:{value:null},res:{value:new THREE.Vector2(1,1)},near:{value:0.1},far:{value:2000},fogF:{value:430},k:{value:0},lw:{value:1}},
+    uniforms:{tC:{value:null},tD:{value:null},tE:{value:null},res:{value:new THREE.Vector2(1,1)},near:{value:0.1},far:{value:2000},fogF:{value:430},k:{value:0},lw:{value:1}},
     vertexShader:'varying vec2 vUv; void main(){vUv=uv; gl_Position=vec4(position.xy,0.0,1.0);}',
     fragmentShader:[
-      'uniform sampler2D tC; uniform sampler2D tD; uniform vec2 res; uniform float near; uniform float far; uniform float fogF; uniform float k; uniform float lw; varying vec2 vUv;',
+      'uniform sampler2D tC; uniform sampler2D tD; uniform sampler2D tE; uniform vec2 res; uniform float near; uniform float far; uniform float fogF; uniform float k; uniform float lw; varying vec2 vUv;',
       'float vz(vec2 uv){float z=texture2D(tD,uv).x*2.0-1.0; return 2.0*near*far/(far+near-z*(far-near));}',
       'float tone(float l){return l<0.12?0.0:(l<0.42?0.6:(l<0.74?0.86:1.0));}',
       'float tl(vec2 uv){return tone(dot(texture2D(tC,uv).rgb,vec3(0.299,0.587,0.114)));}',
@@ -4489,7 +4493,8 @@ function postInit(){
       ' float fade=1.0-smoothstep(fogF*0.5,fogF*0.92,zc);',
       ' float line=max(e,g)*fade;',
       ' float gray=tl(vUv)*(1.0-line);',
-      ' gl_FragColor=vec4(mix(col,vec3(gray),k),1.0);',
+      ' vec4 ex=texture2D(tE,vUv); vec3 sty=mix(col,vec3(gray),k);',
+      ' gl_FragColor=vec4(ex.rgb+(1.0-ex.a)*sty,1.0);',
       '}'].join('\n'),
     depthTest:false,depthWrite:false});
   post.scene=new THREE.Scene(); post.cam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
@@ -4498,9 +4503,10 @@ function postInit(){
 function postTarget(){
   var v=renderer.getDrawingBufferSize(new THREE.Vector2());
   if(post.rt && post.w===v.x && post.h===v.y) return post.rt;
-  if(post.rt){post.rt.depthTexture.dispose(); post.rt.dispose();}
+  if(post.rt){post.rt.depthTexture.dispose(); post.rt.dispose(); post.rt2.dispose();}
   var dt=new THREE.DepthTexture(v.x,v.y); dt.type=THREE.UnsignedIntType; dt.format=THREE.DepthFormat;
   post.rt=new THREE.WebGLRenderTarget(v.x,v.y,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat,depthBuffer:true,depthTexture:dt});
+  post.rt2=new THREE.WebGLRenderTarget(v.x,v.y,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat,depthBuffer:true});
   post.w=v.x; post.h=v.y; post.mat.uniforms.res.value.set(v.x,v.y); post.mat.uniforms.lw.value=Math.max(1,Math.round(v.y/560));
   return post.rt;
 }
@@ -4509,12 +4515,16 @@ function renderScene(){
     try{
       if(!post.mat) postInit();
       var rt=postTarget(), u=post.mat.uniforms;
-      renderer.setRenderTarget(rt); renderer.render(scene,camera); renderer.setRenderTarget(null);
-      u.tC.value=rt.texture; u.tD.value=rt.depthTexture; u.near.value=camera.near; u.far.value=camera.far; u.fogF.value=scene.fog.far; u.k.value=cur.sketch;
+      camera.layers.enableAll();
+      renderer.setRenderTarget(rt); renderer.render(scene,camera);
+      camera.layers.set(0); var ca=renderer.getClearAlpha(); renderer.setClearAlpha(0);
+      renderer.setRenderTarget(post.rt2); renderer.render(scene,camera);
+      renderer.setClearAlpha(ca); renderer.setRenderTarget(null); camera.layers.enableAll();
+      u.tE.value=post.rt2.texture; u.tC.value=rt.texture; u.tD.value=rt.depthTexture; u.near.value=camera.near; u.far.value=camera.far; u.fogF.value=scene.fog.far; u.k.value=cur.sketch;
       renderer.render(post.scene,post.cam); return;
-    }catch(e){post.ok=false; renderer.setRenderTarget(null);}
+    }catch(e){post.ok=false; renderer.setRenderTarget(null); camera.layers.enableAll();}
   }
-  renderer.render(scene,camera);
+  camera.layers.enableAll(); renderer.render(scene,camera);
 }
 
 /* ---------- main loop ---------- */
