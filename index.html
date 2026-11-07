@@ -1862,9 +1862,10 @@ var skPoolStart=POOLS.length;
     s2.scale.set(s2.userData.sc,s2.userData.sc*0.5,1); s2.position.set(s2.userData.x,s2.userData.y,-830); s2.renderOrder=-1; s2.visible=false; sky.add(s2); sketchClouds.push(s2);
   }
 })();
-/* layer 1 = scenery that gets the ink treatment; the road, cars, events and effects stay on layer 0 and keep their colours */
+/* layer 1 = scenery and road, which get the ink treatment; cars, events and effects stay on layer 0 and keep their colours */
 POOLS.slice(skPoolStart).forEach(function(pl){pl.items.forEach(function(it){it.o.layers.set(1);});});
-sky.traverse(function(o){o.layers.set(1);}); ground.layers.set(1);
+sky.traverse(function(o){o.layers.set(1);}); ground.layers.set(1); road.layers.set(1);
+posts.forEach(function(p){p.m.traverse(function(o){o.layers.set(1);});}); rails.forEach(function(r){r.layers.set(1);});
 
 function envApply(dt,t){
   var d=Math.max(0,-c.z), k=Math.floor(d/ZONE_LEN), into=d-k*ZONE_LEN;
