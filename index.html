@@ -943,7 +943,7 @@ function placeScenery(o,zRef,spread){
 
 
 /* ---------- biomes: place, time of day and weather change along the route ---------- */
-var ZONE_LEN=1100, ZONE_BLEND=380, ENV_FAR=520;
+var ZONE_LEN=1100, ZONE_BLEND=700, ENV_FAR=520;
 var NUMF=['fogN','fogF','hemiI','sunI','sunX','sunY','sunZ','fillI','haloO','haloS','haloX','haloY','discS','discX','discY','stars','cloudO','rain','leaves','storm','beam','glow','search','rays','leafS','cave','space'];
 var COLF=['leafC','hemiS','hemiG','sunC','fillC','ground','road','rail','stripe','haloC','discC','cloudC'];
 var BIO=[
@@ -1037,7 +1037,7 @@ function bioAt(z){return zoneBio(Math.floor(Math.max(0,-z)/ZONE_LEN));}
 function edgeGrow(z){
   var d=Math.max(0,-z), into=d-Math.floor(d/ZONE_LEN)*ZONE_LEN;
   var k=Math.floor(d/ZONE_LEN);
-  return clamp((k===0?ZONE_LEN-into:Math.min(into,ZONE_LEN-into))/230,0,1);
+  return clamp((k===0?ZONE_LEN-into:Math.min(into,ZONE_LEN-into))/420,0,1);
 }
 function hash2(k,s){var x=Math.sin(k*127.1+s*311.7)*43758.5453; return x-Math.floor(x);}
 
@@ -2004,7 +2004,7 @@ var spaceUpd=null;
 
 function envApply(dt,t){
   var d=Math.max(0,-c.z), k=Math.floor(d/ZONE_LEN), into=d-k*ZONE_LEN;
-  var a=zoneBio(k), b=zoneBio(k+1), tt=clamp((into-(ZONE_LEN-ZONE_BLEND))/ZONE_BLEND,0,1); tt=tt*tt*(3-2*tt);
+  var a=zoneBio(k), b=zoneBio(k+1), tt=clamp((into-(ZONE_LEN-ZONE_BLEND))/ZONE_BLEND,0,1); tt=tt*tt*tt*(tt*(tt*6-15)+10);
   blendBio(BIO[a],BIO[b],tt);
   if(k!==lastZone){if(state==='play'||state==='count') toast(BIO[a].name,'info'); lastZone=k;}
   if(cur.storm>0.4){nextBolt-=dt; if(nextBolt<=0){flash=1; flashSec=false; nextBolt=rand(3,7.5); genBolt(); thunderQ=rand(0.35,1.1);}}
