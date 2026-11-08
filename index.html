@@ -359,7 +359,7 @@ h1 span{text-shadow:0 0 18px rgba(215,243,255,.4);animation:glow 2.6s ease-in-ou
     <ul class="rules">
       <li><b>Saltar sobre um veículo</b> +200 a +600 pontos e +2 a +4 s (quanto maior, mais vale)</li>
       <li><b>Giro completo no ar</b> +250 pontos</li>
-      <li><b>Eventos surpresa</b> meteoros, caminhão bombardeiro, drone de entregas com mini drones, super-herói com olhos laser, macaco que exige 300 km/h, corrida jurássica um caça que transforma a pista em campo minado e o Doutor Tentáculo, que joga polvos grudentos e dispara um raio verde</li>
+      <li><b>Eventos surpresa</b> meteoros, caminhão bombardeiro, drone de entregas com mini drones, super-herói com olhos laser, macaco que exige 250 km/h, corrida jurássica um caça que transforma a pista em campo minado e o Doutor Tentáculo, que joga polvos grudentos e dispara um raio verde</li>
       <li><b>Batida</b> −3 s · <b>Pouso torto</b> −1,5 s</li>
       <li>O ar recarrega no chão. No ar, só gasta.</li>
     </ul>
@@ -3175,7 +3175,7 @@ function startMonkey(){
   monkey={m:m,t:0,dur:30,tension:0,cd:3,phase:'run',pt:0,x:c.x,rz:40,
     j:{aRx:0,aLx:0,eR:-0.5,eL:-0.5,lR:0,lL:0,kR:0.2,kL:0.2,lean:0.5}};
   m.position.set(c.x,0,c.z+40);
-  eventIntro('Macaco faminto','Mantenha 300 km/h ou ele joga banana');
+  eventIntro('Macaco faminto','Mantenha 250 km/h ou ele joga banana');
 }
 function animateMonkey(k,dt){
   var u=k.m.userData, w=k.t*22, ph=k.phase, s=Math.sin(w), kk=Math.min(1,14*dt);
@@ -3203,7 +3203,7 @@ function updateMonkey(dt,playing){
   k.m.position.set(k.x,gh,mz);
   if(Math.random()<0.5) burst(k.x,gh+0.1,mz+0.6,1,dustHex,2,0.6);
   if(playing && active){
-    if(k.t>5 && c.speed<300/3.6) k.tension=Math.min(1.1,k.tension+dt/(2.4-1.9*diffT())); else k.tension=Math.max(0,k.tension-dt*0.8);
+    if(k.t>5 && c.speed<250/3.6) k.tension=Math.min(1.1,k.tension+dt/(2.4-1.9*diffT())); else k.tension=Math.max(0,k.tension-dt*0.8);
     if(k.phase==='run' && k.tension>=1 && k.cd<=0){k.phase='wind'; k.pt=0; sfx('monkey');}
   }else k.tension=Math.max(0,k.tension-dt);
   if(k.phase==='wind' && k.pt>=0.4){
@@ -4449,7 +4449,7 @@ function update(dt){
   if(c.turbo>0) chips+='<span class="chip" style="color:#ffe14a">SUPER BOOST '+Math.ceil(c.turbo)+' s</span>';
   if(monkey){
     var tn=monkey.tension>0.05;
-    chips+='<span class="chip" style="color:'+(tn?'#ff5a5f':'#ffc24a')+'">Macaco · '+(tn?Math.round(Math.min(1,monkey.tension)*100)+'%':'mantenha 300 km/h')+'</span>';
+    chips+='<span class="chip" style="color:'+(tn?'#ff5a5f':'#ffc24a')+'">Macaco · '+(tn?Math.round(Math.min(1,monkey.tension)*100)+'%':'mantenha 250 km/h')+'</span>';
   }
   if(minis.length) chips+='<span class="chip" style="color:#ff5a5f">Mini drones ×'+minis.length+'</span>';
   if(chips!==fxKey){fxKey=chips; elChips.innerHTML=chips;}
