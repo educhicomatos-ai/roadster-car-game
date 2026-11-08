@@ -4268,7 +4268,11 @@ function update(dt){
   }
 
   /* traffic: movement, lane changes, collision, jump bonus */
-  cars.forEach(function(o){
+  /* half of the traffic at the start; it fills up gradually and reaches 100% at 25000 points */
+  var actCars=Math.round(TRAFFIC*(0.5+0.5*Math.min(1,score/25000)));
+  cars.forEach(function(o,ci){
+    if(ci>=actCars){if(o.m){scene.remove(o.m); o.m=null;} return;}
+    if(!o.m){resetCar(o,c.z-rand(120,260));}
     var m=o.m;
     if(o.dead){
       if(o.vel){
