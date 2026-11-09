@@ -16,7 +16,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: full-bleed 3D scene, HUD frame on top (speed / timer / score, air tank, touch pedals), sheet overlay for menu and results. */
 :root{
@@ -304,6 +304,40 @@ h1 span{text-shadow:0 0 18px rgba(215,243,255,.4);animation:glow 2.6s ease-in-ou
 #stInfo .buy{width:100%;margin-top:8px}
 #stHint{position:absolute;left:50%;bottom:8px;transform:translateX(-10%);font-size:10px;letter-spacing:.1em;color:rgba(255,255,255,.55);text-shadow:0 1px 6px #000;pointer-events:none;white-space:nowrap}
 @media (max-width:640px){#stHint{display:none}}
+
+#overlay.home{justify-content:flex-start;align-items:stretch;padding-block:0;padding-left:0;overflow:hidden;background:linear-gradient(90deg,rgba(8,8,22,.86) 0,rgba(8,8,22,.5) 34%,rgba(8,8,22,0) 62%),linear-gradient(180deg,rgba(8,8,22,.5) 0,rgba(8,8,22,0) 24%,rgba(8,8,22,0) 76%,rgba(8,8,22,.55) 100%)}
+#homeSheet{position:relative;width:min(100%,520px);margin:0;height:100%;padding:clamp(10px,3.4vh,30px) 0 clamp(10px,3vh,24px) max(clamp(18px,4.5vw,64px),env(safe-area-inset-left,0px));display:flex;flex-direction:column;justify-content:center;animation:none}
+#homeSheet[hidden]{display:none}
+.logo{position:relative;margin:0 0 clamp(8px,2.6vh,22px);transform:rotate(-2deg);transform-origin:left center}
+.logo svg{display:block;width:clamp(170px,40vh,330px);height:auto;margin:0 0 calc(clamp(4px,1.2vh,10px)*-1) clamp(6px,2vw,24px);filter:drop-shadow(0 3px 0 rgba(0,0,0,.55))}
+.logo .l1{display:block;font:400 clamp(44px,13.5vh,108px)/.86 "Permanent Marker","Barlow Condensed",Impact,sans-serif;color:#fff;letter-spacing:.01em;text-transform:uppercase;text-shadow:3px 3px 0 #000,-2px 2px 0 #000,2px -2px 0 #000,-2px -2px 0 #000,0 0 22px rgba(0,0,0,.6);-webkit-text-stroke:2px #000;paint-order:stroke fill}
+.logo .l2{display:block;margin:clamp(2px,.8vh,8px) 0 0 clamp(8px,2.6vw,36px);white-space:nowrap;font:400 clamp(28px,8.6vh,68px)/.9 "Permanent Marker","Barlow Condensed",Impact,sans-serif;color:#ffc83a;letter-spacing:.06em;text-transform:uppercase;text-shadow:2px 2px 0 #000,-1px 1px 0 #000,1px -1px 0 #000,-1px -1px 0 #000;-webkit-text-stroke:1.5px #000;paint-order:stroke fill}
+.logo .brush{display:block;height:clamp(4px,1.1vh,9px);width:105%;margin:clamp(5px,1.4vh,12px) 0 0 -4%;background:#ffc83a;clip-path:polygon(0 40%,6% 0,24% 30%,48% 6%,70% 34%,90% 4%,100% 50%,94% 100%,72% 70%,50% 100%,26% 72%,8% 100%);transform:rotate(.6deg)}
+.logo .tag{display:block;margin:clamp(4px,1.1vh,10px) 0 0 4px;font:500 clamp(9px,1.7vh,12px) var(--mono);letter-spacing:.2em;text-transform:uppercase;color:#e6dcc0;text-shadow:0 1px 6px #000}
+#homeMenu{display:flex;flex-direction:column;gap:clamp(3px,1vh,9px);margin:0}
+.mb{display:block;width:max-content;max-width:100%;white-space:nowrap;border:0;cursor:pointer;text-align:left;position:relative;
+  height:clamp(34px,8.6vh,56px);padding:0 clamp(18px,3vw,34px) 0 clamp(16px,2.6vw,30px);
+  font:700 clamp(19px,5.1vh,32px)/1 "Barlow Condensed",Impact,sans-serif;letter-spacing:.09em;text-transform:uppercase;
+  color:#d8ccaa;background:#0e0c0a repeating-linear-gradient(115deg,rgba(255,255,255,.035) 0 2px,transparent 2px 9px);
+  clip-path:polygon(0 14%,4% 0,19% 10%,41% 2%,64% 9%,86% 0,98% 12%,100% 52%,97% 92%,80% 100%,57% 92%,31% 100%,8% 94%,1% 78%);
+  transition:transform .12s,background-color .12s,color .12s;animation:mbin .5s cubic-bezier(.2,.8,.2,1) both}
+.mb:nth-child(1){min-width:clamp(190px,44vh,310px)}
+.mb:nth-child(2){min-width:clamp(200px,48vh,330px);margin-left:clamp(6px,1.4vw,16px);animation-delay:.07s}
+.mb:nth-child(3){min-width:clamp(180px,42vh,290px);margin-left:clamp(2px,.6vw,8px);animation-delay:.14s;clip-path:polygon(0 8%,6% 0,24% 12%,48% 0,72% 10%,93% 2%,100% 20%,98% 66%,100% 94%,76% 100%,52% 90%,26% 100%,5% 92%,2% 60%)}
+.mb:nth-child(4){min-width:clamp(170px,38vh,270px);margin-left:clamp(10px,2vw,24px);animation-delay:.21s}
+.mb:nth-child(5){min-width:clamp(190px,42vh,300px);animation-delay:.28s}
+.mb.sel,.mb:hover{background-color:#ffc83a;background-image:repeating-linear-gradient(115deg,rgba(0,0,0,.07) 0 2px,transparent 2px 9px);color:#16110a;transform:translateX(clamp(6px,1.2vw,14px))}
+.mb:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.mb[hidden]{display:none}
+body:has(#overlay.home:not([hidden])) #ui{visibility:hidden}
+#homeStats{position:absolute;top:max(clamp(8px,2.4vh,18px),env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));display:flex;gap:2px;pointer-events:none}
+#homeStats div{padding:6px 14px;background:rgba(14,12,10,.8);color:#e6dcc0;font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;clip-path:polygon(0 0,100% 0,100% 100%,8px 100%)}
+#homeStats b{display:block;font:700 clamp(18px,3.8vh,26px)/1.1 "Barlow Condensed",sans-serif;letter-spacing:.06em;color:#ffc83a}
+#homeStats b.coin{color:var(--good)}
+#homeFoot{position:absolute;left:max(clamp(18px,4.5vw,64px),env(safe-area-inset-left,0px));bottom:clamp(6px,2vh,16px);font-size:10px;letter-spacing:.08em;color:rgba(230,220,192,.7)}
+#homeFoot a{color:inherit}
+@keyframes mbin{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+@media (max-height:420px){#homeFoot{display:none}}
 </style>
 
 <div id="stage"><canvas id="gl"></canvas><div id="speedfx"></div><div id="danger"></div><div id="flash"></div></div>
@@ -370,24 +404,31 @@ h1 span{text-shadow:0 0 18px rgba(215,243,255,.4);animation:glow 2.6s ease-in-ou
   <div id="stHint">Arraste para girar · role ou pince para aproximar</div>
 </div>
 
-<div id="overlay">
+<div id="overlay" class="home">
   <div class="sheet" id="homeSheet">
-    <p class="kicker">Corrida e sobrevivência em alta velocidade</p>
-    <h1>Rocket Car <span>Game</span></h1>
-    <p class="lead">Pilote o carro-foguete, salte sobre o trânsito, sobreviva aos eventos surpresa e ganhe dinheiro para melhorar o carro.</p>
-    <div class="statrow">
-      <div><span class="lbl">Recorde</span><span class="big" id="homeBest">0</span></div>
-      <div><span class="lbl">Dinheiro</span><span class="big coin" id="homeMoney">$ 0</span></div>
+    <div class="logo">
+      <svg viewBox="0 0 400 112" aria-hidden="true">
+        <g id="wingL"><path d="M196 62C150 42 84 34 8 8L42 30 4 38 46 50 12 64 62 72 34 86 92 88 70 102 132 94 196 84Z" fill="#14120f"/><path d="M60 40C100 48 140 56 184 68M40 58C90 66 130 72 180 78M70 80C110 84 150 84 188 82" stroke="#ffc83a" stroke-width="3" fill="none" stroke-linecap="round"/></g>
+        <use href="#wingL" transform="translate(400 0) scale(-1 1)"/>
+        <path d="M200 6C216 26 219 54 214 88L186 88C181 54 184 26 200 6Z" fill="#f4f1e6" stroke="#14120f" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="200" cy="46" r="8" fill="#14120f"/><circle cx="200" cy="46" r="4" fill="#28c8ff"/>
+        <path d="M186 70L168 96 186 88ZM214 70L232 96 214 88Z" fill="#ff3b4a" stroke="#14120f" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M190 90L210 90 200 112Z" fill="#ffc83a" stroke="#14120f" stroke-width="2"/>
+      </svg>
+      <span class="l1">Rocket</span>
+      <span class="l2">Car Game</span>
+      <i class="brush"></i>
+      <span class="tag">Corrida e sobrevivência em alta velocidade</span>
     </div>
-    <div class="menu-btns">
-      <button class="go" id="start" type="button">Jogar</button>
-      <button class="go alt" id="goGarage" type="button">Garagem</button>
-      <button class="go alt sm" id="goHow" type="button">Como jogar</button>
-      <button class="go alt sm" id="goConsole" type="button">Console</button>
-      <button class="go alt sm" id="dlGame" type="button" hidden>Baixar para o celular</button>
+    <div id="homeMenu">
+      <button class="mb sel" id="start" type="button">Jogar</button>
+      <button class="mb" id="goGarage" type="button">Garagem</button>
+      <button class="mb" id="goHow" type="button">Como jogar</button>
+      <button class="mb" id="goConsole" type="button">Console</button>
+      <button class="mb" id="dlGame" type="button" hidden>Baixar para o celular</button>
     </div>
-    <p class="note">Dica: aperte <b>/</b> no menu para abrir o console.</p>
-    <p class="note" style="margin-top:6px"><a href="https://educhicomatos-ai.github.io/roadster-car-game/privacidade.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Política de Privacidade</a></p>
+    <div id="homeStats"><div>Recorde<b id="homeBest">0</b></div><div>Dinheiro<b class="coin" id="homeMoney">$ 0</b></div></div>
+    <div id="homeFoot"><a href="https://educhicomatos-ai.github.io/roadster-car-game/privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a> · aperte / para o console</div>
   </div>
 
   <div class="sheet" id="howSheet" hidden>
@@ -2769,7 +2810,7 @@ devUi();
 var SHEETS=['homeSheet','howSheet','garageSheet','consoleSheet','endSheet'], garTab='up';
 function showSheet(id){
   SHEETS.forEach(function(s){$(s).hidden=(s!==id);});
-  $('overlay').hidden=false; $('overlay').classList.toggle('lite',id==='garageSheet');
+  $('overlay').hidden=false; $('overlay').classList.toggle('lite',id==='garageSheet'); $('overlay').classList.toggle('home',id==='homeSheet');
   refreshMoney();
   if(id==='garageSheet') renderGarage();
   if(id==='consoleSheet'){setTimeout(function(){var i=$('cmdIn'); i.focus();},30);}
@@ -3281,6 +3322,22 @@ function studioUpdate(dt){
   },true);
 })();
 
+
+/* keyboard / hover navigation for the start menu */
+(function(){
+  var btns=['start','goGarage','goHow','goConsole','dlGame'].map($), sel=0;
+  function vis(){return btns.filter(function(b){return !b.hidden;});}
+  function mark(i){var v=vis(); sel=(i+v.length)%v.length; btns.forEach(function(b){b.classList.remove('sel');}); v[sel].classList.add('sel');}
+  btns.forEach(function(b){b.addEventListener('mouseenter',function(){mark(vis().indexOf(b));});});
+  window.addEventListener('keydown',function(e){
+    if(studio||state!=='menu'||$('overlay').hidden||$('homeSheet').hidden) return;
+    if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON')) return;
+    if(e.key==='ArrowDown'){e.preventDefault(); mark(sel+1);}
+    else if(e.key==='ArrowUp'){e.preventDefault(); mark(sel-1);}
+    else if(e.key==='Enter'){e.preventDefault(); vis()[sel].click();}
+  });
+})();
+
 function conLog(html){var l=$('cmdLog'); l.innerHTML=html;}
 function runCommand(raw){
   var cmd=raw.trim().toUpperCase();
@@ -3320,7 +3377,7 @@ $('endMenu').addEventListener('click',function(){this.blur(); state='menu'; show
 function resetRun(){
   clearWorld();
   c.x=0;c.y=0;c.z=0;c.vy=0;c.speed=34;c.psi=0;c.grounded=true;c.slopeVy=0;c.pitch=0;c.rolling=false;c.rollAng=0;c.air=TANK;c.dist=0;c.shield=0;c.mult=0;c.nitro=0;c.turbo=0;c.slow=0;c.zap=0;c.slip=0;
-  score=0; timeLeft=RUN_TIME+up.clock*5; spawnZ=-120; shake=0;
+  dmo.ang=0; dmo.air=0; score=0; timeLeft=RUN_TIME+up.clock*5; spawnZ=-120; shake=0;
   fx.dmg=0; fx.kick=0; fx.hit=0; fx.prevTL=timeLeft; fx.jp=fx.jpv=fx.jr=fx.jrv=0; if(player.userData.paint) player.userData.paint.emissive.setHex(0);
   envReset();
   fillTraffic(); fillPups(); resetEvents();
@@ -3369,7 +3426,7 @@ function crash(o){
 function land(gh){
   var impact=-c.vy;
   c.grounded=true; c.y=gh; c.vy=0; c.slopeVy=0;
-  if(impact>4){burst(c.x,0.2,c.z,14,dustHex,8,1.3); sfx('land'); shock(c.x,0,c.z,dustHex,3+impact*0.3,0.45); fx.kick=Math.max(fx.kick,Math.min(0.6,impact/30));}
+  if(impact>4){burst(c.x,0.2,c.z,14,dustHex,8,1.3); if(state==='play') sfx('land'); shock(c.x,0,c.z,dustHex,3+impact*0.3,0.45); fx.kick=Math.max(fx.kick,Math.min(0.6,impact/30));}
   if(c.rolling){
     c.rolling=false; c.rollAng=0;
     if(state==='play'){c.speed*=0.72; timeLeft-=1.5; shake=Math.max(shake,0.7); toast('Pouso torto −1,5 s','bad'); sfx('hit');}
@@ -4755,6 +4812,38 @@ function resetEvents(){
   rocketNext=3; elapsed=0; bossHits=0;
 }
 
+
+/* ---------- menu background: the car drives itself, jumps ramps and does tricks ---------- */
+var dmo={ang:0,air:0,mode:0,lift:false}, homeOff=0;
+function demoPilot(){
+  var i, tgt=null, best=1e9, r, o, d, lim=ROAD_HALF-2;
+  if(!c.grounded) return clamp(-c.x*0.08,-0.4,0.4);
+  for(i=0;i<ramps.length;i++){r=ramps[i]; d=c.z-r.z0; if(d>-4 && d<190 && d<best){best=d; tgt=r.x;}}
+  if(tgt===null) tgt=Math.sin(demoT*0.5)*3;
+  for(i=0;i<cars.length;i++){
+    o=cars[i]; if(!o.m||o.dead) continue;
+    d=c.z-o.m.position.z;
+    if(d>4 && d<70 && Math.abs(o.m.position.x-c.x)<2.9){tgt=o.m.position.x+(c.x>=o.m.position.x?3.4:-3.4); break;}
+  }
+  tgt=clamp(tgt,-lim,lim);
+  return clamp((tgt-c.x)*0.3,-1,1);
+}
+function demoTricks(dt){
+  dmo.lift=false;
+  if(c.grounded){
+    if(dmo.air>0) dmo.air=0;
+    var ta=Math.round(dmo.ang/TAU)*TAU; dmo.ang+=(ta-dmo.ang)*Math.min(1,14*dt); if(Math.abs(dmo.ang-ta)<0.01) dmo.ang=0;
+    return;
+  }
+  if(dmo.air===0){dmo.air=0.001; dmo.mode=(Math.random()*4)|0; dmo.ang=0; if(dmo.mode===0||dmo.mode===3){c.rolling=true; c.rollAng=0;}}
+  dmo.air+=dt;
+  if(dmo.mode>=1 && dmo.air>0.12){
+    var dir=dmo.mode===2?-1:1;
+    if(Math.abs(dmo.ang)<TAU) dmo.ang+=dir*(TAU/0.9)*dt;
+    if(Math.abs(dmo.ang)>TAU) dmo.ang=dir*TAU;
+  }
+  dmo.lift=(dmo.air<1.0 && c.y<14 && c.air>20);
+}
 function update(dt){
   if(studio){studioUpdate(dt); return;}
   if(state==='count'){
@@ -4770,13 +4859,14 @@ function update(dt){
 
   /* heading */
   var steer=(inp.right?1:0)-(inp.left?1:0);
-  if(!playing){demoT+=dt; steer=Math.sin(demoT*0.5)*0.2;}
+  var demo=(state==='menu'||state==='over');
+  if(!playing){demoT+=dt; steer=demo?demoPilot():Math.sin(demoT*0.5)*0.2;}
   c.psi+=(steer*0.36-c.psi)*Math.min(1,3.4*dt);
   if(c.slip>0){c.slip-=dt; c.psi+=Math.sin(c.slip*28)*0.9*dt;}
 
   /* speed */
   var offroad=c.grounded && Math.abs(c.x)>ROAD_HALF+0.5;
-  var cruise=(offroad?22:(playing?46:34))+(c.nitro>0?10:0)+((playing&&monkey&&!offroad)?43:0)+(c.turbo>0?54:0)+(offroad?0:up.motor*2.5);
+  var cruise=(offroad?22:(playing?46:(demo?44:34)))+(c.nitro>0?10:0)+((playing&&monkey&&!offroad)?43:0)+(c.turbo>0?54:0)+(offroad?0:up.motor*2.5);
   if(c.slow>0) cruise*=0.6;
   var a;
   if(wantBoost) a=62;
@@ -4797,6 +4887,7 @@ function update(dt){
   if(playing){c.shield=Math.max(0,c.shield-dt); c.mult=Math.max(0,c.mult-dt); c.nitro=Math.max(0,c.nitro-dt); c.turbo=Math.max(0,c.turbo-dt); c.slow=Math.max(0,c.slow-dt); c.zap=Math.max(0,c.zap-dt);}
   if(c.nitro>0) c.air=TANK;
   if(c.zap>0) c.air=0;
+  if(demo){demoTricks(dt); if(dmo.lift){wantLift=true; c.air=Math.max(c.air,60);}} else dmo.ang=0;
 
   /* movement */
   var nx=c.x+Math.sin(c.psi)*c.speed*dt, lim=ROAD_HALF-1.3;
@@ -4932,7 +5023,7 @@ function update(dt){
   c.pitch+=(tp-c.pitch)*Math.min(1,8*dt);
   player.position.set(c.x,c.y+(c.grounded?Math.sin(performance.now()*0.03*(0.5+c.speed/40))*0.018*Math.min(1,c.speed/30):0),c.z);
   player.rotation.y=-c.psi+(c.slip>0?Math.sin(c.slip*14)*0.9*Math.min(1,c.slip):0);
-  player.rotation.x=c.pitch+fx.jp;
+  player.rotation.x=c.pitch+fx.jp+dmo.ang;
   player.rotation.z=c.psi*0.35+c.rollAng+fx.jr;
   player.userData.tail.color.setHex(inp.brake?0xffb0b0:tailBase);
   player.updateMatrixWorld(true);
@@ -5026,6 +5117,10 @@ function frame(now){
   var ts=1; if(fx.hit>0){ts=0.12; fx.hit-=dt;}
   if(!paused) update(dt*ts);
   lookFx(now/1000);
+  var hv=(state==='menu'||state==='over')&&!studio&&!$('overlay').hidden&&!$('homeSheet').hidden&&camera.aspect>1.25;
+  homeOff+=((hv?1:0)-homeOff)*Math.min(1,4*dt);
+  if(homeOff>0.003){var vw=canvas.parentElement.clientWidth, vh=canvas.parentElement.clientHeight; camera.setViewOffset(vw,vh,-vw*0.2*homeOff,0,vw,vh);}
+  else if(camera.view&&camera.view.enabled) camera.clearViewOffset();
   renderer.render(scene,camera);
 }
 requestAnimationFrame(frame);
