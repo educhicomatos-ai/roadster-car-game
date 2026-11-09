@@ -2807,31 +2807,18 @@ function timeLeftTxt(){
   var ms=(slotNow()+1)*SPIN_SLOT_MS-Date.now(), sec=Math.max(0,Math.floor(ms/1000)), p=function(n){return ('0'+n).slice(-2);};
   return p(Math.floor(sec/3600))+':'+p(Math.floor(sec/60)%60)+':'+p(sec%60);
 }
-function renderLookTab(){
-  var R=roulette(slotNow()), h='', cat;
-  h+='<button class="studioCta" type="button" data-act="studio"><b>Personalizar carro</b><span>Garagem 3D · veja cada mudança no carro na hora</span></button>';
-  h+='<div class="rbox"><div class="rhead"><b>Roleta de personalizações</b><span>Muda em <span id="rtimer">'+timeLeftTxt()+'</span></span></div>';
-  h+='<button class="buy spin'+((!canPay(SPIN_COST))?' no':'')+'" type="button" data-act="spin"'+(spinning?' disabled':'')+'>Girar roleta · '+(save.dev?'Grátis':'$ '+SPIN_COST.toLocaleString('pt-BR'))+'</button>';
+function renderRoulView(){
+  var R=roulette(slotNow()), h='';
+  h+='<div class="rbox" style="margin:8px"><div class="rhead"><b>Roleta</b><span>Muda em <span id="rtimer">'+timeLeftTxt()+'</span></span></div>';
+  h+='<button class="buy spin'+((!canPay(SPIN_COST))?' no':'')+'" type="button" data-sa="spin"'+(spinning?' disabled':'')+'>Girar roleta · '+(save.dev?'Grátis':'$ '+SPIN_COST.toLocaleString('pt-BR'))+'</button>';
   if(lastStrip) h+='<div class="reel" id="reel"><div class="strip" id="strip" style="left:50%;transform:translateX(-'+lastStrip.x+'px)">'+lastStrip.cells.map(function(e,i){return cellHtml(e,i===lastStrip.f?'cell hit':'cell');}).join('')+'</div><i class="mark"></i></div>';
   else h+='<div class="reel" id="reel"><div class="strip" id="strip">'+R.map(function(e){return cellHtml(e);}).join('')+'</div><i class="mark"></i></div>';
   if(lastWin){
     var wi=lookItem(lastWin.cat,lastWin.id), rc=RAR[wi.r].col;
-    h+='<div class="win" style="--rc:'+rc+'"><i style="background:'+swatchCss(wi,lastWin.cat)+'"></i><div><small>'+RAR[wi.r].n+' · '+LOOK[lastWin.cat].tag+'</small><b>'+wi.name+'</b><small>'+(lastWin.dup?'Repetido! Você recebeu $ '+lastWin.refund.toLocaleString('pt-BR')+' de volta.':'Novo no inventário!')+'</small></div>'
-      +(save.sel[lastWin.cat]===lastWin.id?'':'<button class="buy" type="button" data-act="look" data-cat="'+lastWin.cat+'" data-id="'+lastWin.id+'">Equipar</button>')+'</div>';
+    h+='<div class="win" style="--rc:'+rc+'"><i style="background:'+swatchCss(wi,lastWin.cat)+'"></i><div><small>'+RAR[wi.r].n+' · '+LOOK[lastWin.cat].tag+'</small><b>'+wi.name+'</b><small>'+(lastWin.dup?'Repetido! Você recebeu $ '+lastWin.refund.toLocaleString('pt-BR')+' de volta.':'Novo no inventário!')+'</small></div></div>';
   }
-  h+='<p class="odds">Chances: '+RAR_ORDER.slice().reverse().map(function(r){return '<span style="color:'+RAR[r].col+'">'+RAR[r].n+' '+RAR[r].w+'%</span>';}).join(' · ')+'<br>Quanto mais raro, menos itens da roleta e mais difícil de sair.</p></div>';
-  h+='<p class="catlbl">Itens na roleta agora ('+R.length+')</p><div class="rgrid">'+R.map(function(e){return cellHtml(e,'cell mini');}).join('')+'</div>';
-  h+='<p class="catlbl" style="margin-top:16px">Seu inventário</p>';
-  for(cat in LOOK){
-    h+='<p class="catlbl">'+LOOK[cat].title+'</p><div class="sw">';
-    var own=LOOK[cat].items.filter(function(it){return save.own[cat].indexOf(it.id)>=0;});
-    own.sort(function(a,b){return RAR_ORDER.indexOf(a.r)-RAR_ORDER.indexOf(b.r);});
-    own.forEach(function(it){
-      var sel=save.sel[cat]===it.id;
-      h+='<button class="swb'+(sel?' sel':'')+'" style="--rc:'+RAR[it.r].col+'" type="button" data-act="look" data-cat="'+cat+'" data-id="'+it.id+'"><i style="background:'+swatchCss(it,cat)+'"></i>'+it.name+'<span>'+RAR[it.r].n+(sel?' · em uso':'')+'</span></button>';
-    });
-    h+='</div>';
-  }
+  h+='<p class="odds">Chances: '+RAR_ORDER.slice().reverse().map(function(r){return '<span style="color:'+RAR[r].col+'">'+RAR[r].n+' '+RAR[r].w+'%</span>';}).join(' · ')+'<br>Quanto mais raro, menos itens na roleta e mais difícil de sair.</p></div>';
+  h+='<p class="catlbl" style="margin:8px">Itens na roleta agora ('+R.length+')</p><div class="rgrid" style="padding:0 8px 8px">'+R.map(function(e){return cellHtml(e,'cell mini');}).join('')+'</div>';
   return h;
 }
 function pickPrize(R){
@@ -2844,10 +2831,11 @@ function pickPrize(R){
 }
 function doSpin(){
   if(spinning) return;
-  if(!canPay(SPIN_COST)){garMsg('Dinheiro insuficiente. Jogue mais corridas para ganhar.'); sfx('hit'); return;}
+  if(!canPay(SPIN_COST)){toast('Dinheiro insuficiente. Jogue mais corridas para ganhar.','info'); sfx('hit'); return;}
+  if(studio) stRevert();
   var R=roulette(slotNow()), prize=pickPrize(R), strip=$('strip'), reel=$('reel');
   if(!strip||!reel) return;
-  spinning=true; lastWin=null; lastStrip=null; pay(SPIN_COST); persist(); refreshMoney(); garMsg('');
+  spinning=true; lastWin=null; lastStrip=null; pay(SPIN_COST); persist(); refreshMoney(); garMsg(''); if(studio){ST.focus='_'; $('stMoney').textContent=money(save.money);}
   document.querySelectorAll('#shopList [data-act]').forEach(function(b){b.disabled=true;});
   var N=46, F=38, cells=[], i;
   for(i=0;i<N;i++) cells.push(i===F?prize:R[Math.floor(Math.random()*R.length)]);
@@ -2871,13 +2859,13 @@ function doSpin(){
     lastWin={cat:prize.cat,id:prize.id,dup:dup,refund:refund}; lastStrip={cells:cells,f:fi,x:target}; spinning=false; persist(); refreshMoney();
     sfx(it.r==='c'?'pickup':'bonus'); buzz(it.r==='l'?200:60);
     garMsg(it.name+' ('+RAR[it.r].n+')'+(dup?' · repetido, reembolso de $ '+refund.toLocaleString('pt-BR'):' adicionado ao inventário.'));
-    renderGarage();
+    if(studio){$('stMoney').textContent=money(save.money); ST.focus=prize.cat; stPreview(prize.cat,prize.id); stRender();} else renderGarage();
   }
   requestAnimationFrame(step);
 }
 setInterval(function(){
-  var el=$('rtimer'); if(!el||$('garageSheet').hidden||garTab!=='look'||spinning) return;
-  if(rouCache.slot!==slotNow()){lastStrip=null; renderGarage();} else el.textContent=timeLeftTxt();
+  var el=$('rtimer'); if(!el||!studio||ST.view!=='roul'||spinning) return;
+  if(rouCache.slot!==slotNow()){lastStrip=null; stRender();} else el.textContent=timeLeftTxt();
 },1000);
 function garMsg(t){$('garMsg').textContent=t||'';}
 function canPay(p){return save.dev || save.money>=p;}
@@ -2893,8 +2881,6 @@ function renderGarage(){
       h+='<div class="item"><div><b>'+u.name+'</b><small>'+u.desc+'</small><div class="pips">'+pips+'</div></div>'
         +'<button class="buy'+((!max&&!ok)?' no':'')+'" type="button" data-act="buyup" data-id="'+u.id+'"'+(max?' disabled':'')+'>'+(max?'Máximo':(save.dev?'Grátis':'$ '+pr.toLocaleString('pt-BR')))+'</button></div>';
     });
-  }else{
-    h=renderLookTab();
   }
   $('shopList').innerHTML=h;
   refreshMoney();
@@ -2904,6 +2890,7 @@ $('garageSheet').addEventListener('click',function(e){
   var act=b.getAttribute('data-act'), id=b.getAttribute('data-id'), cat=b.getAttribute('data-cat');
   initAudio();
   if(spinning) return;
+  if(act==='tab' && id==='look'){openStudio(); return;}
   if(act==='tab'){garTab=id; garMsg(''); renderGarage(); return;}
   if(act==='buyup'){
     var u=UPG.filter(function(x){return x.id===id;})[0], pr=upPrice(u);
@@ -3133,13 +3120,14 @@ function stRevert(){var ch=false, k; for(k in ST.cmt) if(save.sel[k]!==ST.cmt[k]
 function stPreview(cat,id){if(save.sel[cat]===id) return; save.sel[cat]=id; applyLook();}
 function stRender(){
   var h='', i;
-  $('stCrumb').textContent=ST.view==='cats'?'Personalização do carro':LOOK[ST.cat].title;
+  $('stCrumb').textContent=ST.view==='cats'?'Personalização do carro':(ST.view==='roul'?'Roleta de itens':LOOK[ST.cat].title);
+  if(ST.view==='roul'){$('stList').innerHTML=renderRoulView(); stInfo(); $('stMoney').textContent=money(save.money); return;}
   if(ST.view==='cats'){
+    h+='<button class="stRow'+(ST.idx===0?' sel':'')+'" type="button" data-i="0" style="--rc:#ffc24a"><span class="stNm">★ Roleta de itens</span><span class="stRt">ganhar itens</span></button>';
     STCATS.forEach(function(e,k){
       var cat=e[0], it=lookItem(cat,ST.cmt[cat]);
-      h+='<button class="stRow'+(k===ST.idx?' sel':'')+'" type="button" data-i="'+k+'" style="--rc:'+RAR[it.r].col+'"><span class="stNm">'+e[1]+'</span><span class="stRt">'+it.name+'</span></button>';
+      h+='<button class="stRow'+(k+1===ST.idx?' sel':'')+'" type="button" data-i="'+(k+1)+'" style="--rc:'+RAR[it.r].col+'"><span class="stNm">'+e[1]+'</span><span class="stRt">'+it.name+'</span></button>';
     });
-    h+='<button class="stRow'+(ST.idx===5?' sel':'')+'" type="button" data-i="5"><span class="stNm">Roleta de itens ›</span></button>';
     h+='<button class="stRow'+(ST.idx===6?' sel':'')+'" type="button" data-i="6"><span class="stNm">‹ Sair do estúdio</span></button>';
   }else{
     h+='<button class="stRow'+(ST.idx===0?' sel':'')+'" type="button" data-i="0"><span class="stNm">‹ Voltar</span></button>';
@@ -3153,39 +3141,50 @@ function stRender(){
   stInfo();
   $('stMoney').textContent=money(save.money);
 }
-function stCur(){return ST.view==='items'&&ST.idx>0?stItems()[ST.idx-1]:null;}
+function stCur(){
+  if(ST.view==='roul') return lastWin?lookItem(lastWin.cat,lastWin.id):null;
+  return ST.view==='items'&&ST.idx>0?stItems()[ST.idx-1]:null;
+}
+function stCatOf(){return ST.view==='roul'?(lastWin?lastWin.cat:null):ST.cat;}
 function stInfo(){
-  var el=$('stInfo'), it=null, cat=null, h='';
-  if(ST.view==='items'){it=stCur(); cat=ST.cat;}
-  else if(ST.idx<5){cat=STCATS[ST.idx][0]; it=lookItem(cat,ST.cmt[cat]);}
+  var el=$('stInfo'), it=null, cat=null, h='', roul=(ST.view==='roul');
+  if(roul||ST.view==='items'){it=stCur(); cat=stCatOf();}
+  else if(ST.idx>=1&&ST.idx<=5){cat=STCATS[ST.idx-1][0]; it=lookItem(cat,ST.cmt[cat]);}
   if(!it){
-    el.style.setProperty('--rc','#28e1ff');
-    h=ST.view==='items'?'<b>Voltar</b><small>Volta para a lista de categorias. O que você não equipou não é salvo.</small>':(ST.idx===5?'<b>Roleta de itens</b><small>Gire a roleta para desbloquear pinturas, adesivos e acessórios novos.</small>':'<b>Estúdio</b><small>Escolha uma categoria. Você vê cada mudança no carro na hora.</small>');
-    el.innerHTML=h; ST.ring.set('#28e1ff'); return;
+    var gold=(roul||(ST.view==='cats'&&ST.idx===0));
+    el.style.setProperty('--rc',gold?'#ffc24a':'#28e1ff'); ST.ring.set(gold?'#ffc24a':'#28e1ff');
+    if(roul) h='<b>Roleta de itens</b><small>Gire para ganhar um item. Ele aparece no carro na hora, só como pré-visualização: equipe se gostar.</small>';
+    else if(ST.view==='items') h='<b>Voltar</b><small>Volta para a lista de categorias. O que você não equipou não é salvo.</small>';
+    else if(ST.idx===0) h='<b>Roleta de itens</b><small>Gire para desbloquear pinturas, adesivos e acessórios. O item sorteado aparece no carro na hora.</small>';
+    else if(ST.idx===6) h='<b>Sair</b><small>Volta para a garagem.</small>';
+    else h='<b>Estúdio</b><small>Escolha uma categoria. Você vê cada mudança no carro na hora.</small>';
+    el.innerHTML=h; return;
   }
   var col=RAR[it.r].col, own=stOwn(cat,it.id), eq=(ST.cmt[cat]===it.id);
   el.style.setProperty('--rc',col); ST.ring.set(col);
-  h='<b>'+it.name+'</b><span class="pill">'+RAR[it.r].n+'</span><small>'+LOOK[cat].tag+' · '+(ST.view==='cats'?'em uso agora':(eq?'em uso':(own?'no seu inventário':'bloqueado · saia na roleta')))+'</small>';
-  if(ST.view==='items'){
+  h='<b>'+it.name+'</b><span class="pill">'+RAR[it.r].n+'</span><small>'+LOOK[cat].tag+' · '+(ST.view==='cats'?'em uso agora':(eq?'em uso':(roul?'pré-visualização · ainda não equipado':(own?'no seu inventário':'bloqueado · ganhe na roleta'))))+'</small>';
+  if(ST.view!=='cats'){
     if(eq) h+='<button class="buy" type="button" disabled>Em uso</button>';
     else if(own) h+='<button class="buy" type="button" data-sa="equip">Equipar</button>';
     else h+='<button class="buy no" type="button" data-sa="roulette">Ir para a roleta</button>';
   }
   el.innerHTML=h;
 }
-function stFocus(){ST.focus=(ST.view==='items')?ST.cat:(ST.idx<5?STCATS[ST.idx][0]:'_');}
+function stFocus(){ST.focus=(ST.view==='items')?ST.cat:(ST.view==='roul'?'_':(ST.idx>=1&&ST.idx<=5?STCATS[ST.idx-1][0]:'_'));}
+function stGoRoul(){stRevert(); ST.view='roul'; ST.cat=null; lastWin=null; lastStrip=null; stFocus(); sfx('tick'); stRender();}
 function stSelect(i,act){
+  if(spinning) return;
   if(ST.view==='cats'){
     ST.idx=i; stFocus();
     if(act){
-      if(i<5){ST.cat=STCATS[i][0]; ST.view='items'; var cur=-1, a=stItems(); for(var k=0;k<a.length;k++) if(a[k].id===ST.cmt[ST.cat]) cur=k; ST.idx=cur+1; stFocus(); sfx('tick');}
-      else if(i===5){closeStudio('roulette'); return;}
+      if(i===0){stGoRoul(); return;}
+      if(i>=1&&i<=5){ST.cat=STCATS[i-1][0]; ST.view='items'; var cur=-1, a=stItems(); for(var k=0;k<a.length;k++) if(a[k].id===ST.cmt[ST.cat]) cur=k; ST.idx=cur+1; stFocus(); sfx('tick');}
       else{closeStudio(); return;}
     }
     stRender(); return;
   }
   if(i===0){
-    if(act){stRevert(); ST.idx=STCATS.map(function(e){return e[0];}).indexOf(ST.cat); ST.view='cats'; ST.cat=null; stFocus(); sfx('tick'); stRender(); return;}
+    if(act){stRevert(); ST.idx=STCATS.map(function(e){return e[0];}).indexOf(ST.cat)+1; ST.view='cats'; ST.cat=null; stFocus(); sfx('tick'); stRender(); return;}
     ST.idx=0; stRevert(); stRender(); return;
   }
   var it=stItems()[i-1]; if(!it) return;
@@ -3194,9 +3193,9 @@ function stSelect(i,act){
   else{sfx('tick'); stRender();}
 }
 function stEquip(){
-  var it=stCur(); if(!it) return;
-  if(!stOwn(ST.cat,it.id)){toast('Bloqueado: ganhe na roleta','info'); sfx('hit'); stRender(); return;}
-  ST.cmt[ST.cat]=it.id; save.sel[ST.cat]=it.id; persist(); applyLook(); sfx('pickup'); stRender();
+  var it=stCur(), cat=stCatOf(); if(!it||!cat) return;
+  if(!stOwn(cat,it.id)){toast('Bloqueado: ganhe na roleta','info'); sfx('hit'); stRender(); return;}
+  ST.cmt[cat]=it.id; save.sel[cat]=it.id; persist(); applyLook(); sfx('pickup'); stRender();
 }
 function openStudio(){
   initAudio(); if(!garageG) buildGarage();
@@ -3220,7 +3219,7 @@ function closeStudio(next){
   garageG.visible=false; sky.visible=true;
   camera.position.set(c.x,c.y*0.65+3.6,c.z+9.5); camera.fov=60; camera.updateProjectionMatrix(); camera.up.set(0,1,0); camera.lookAt(c.x,1.3,c.z-14);
   P.forEach(function(p){p.life=0; p.m.visible=false;});
-  garTab='look'; garMsg(''); showSheet('garageSheet');
+  garTab='up'; garMsg(''); showSheet('garageSheet');
 }
 function studioUpdate(dt){
   var t=performance.now()*0.001, pr=CAMP[ST.focus]||CAMP._, k=1-Math.exp(-3.2*dt);
@@ -3252,24 +3251,33 @@ function studioUpdate(dt){
   d.addEventListener('pointerup',up); d.addEventListener('pointercancel',up);
   d.addEventListener('wheel',function(e){e.preventDefault(); ST.zoom=clamp(ST.zoom*(1+e.deltaY*0.001),0.65,1.05); ST.idle=0;},{passive:false});
   $('stList').addEventListener('click',function(e){
+    var sa=e.target.closest?e.target.closest('[data-sa]'):null;
+    if(sa){initAudio(); if(sa.getAttribute('data-sa')==='spin') doSpin(); return;}
     var b=e.target.closest?e.target.closest('.stRow'):null; if(!b) return;
     var i=+b.getAttribute('data-i'); initAudio();
     stSelect(i,i===ST.idx||ST.view==='cats');
   });
   $('stInfo').addEventListener('click',function(e){
     var b=e.target.closest?e.target.closest('[data-sa]'):null; if(!b) return;
-    if(b.getAttribute('data-sa')==='equip') stEquip(); else closeStudio('roulette');
+    if(spinning) return;
+    if(b.getAttribute('data-sa')==='equip') stEquip(); else stGoRoul();
   });
   $('stBack').addEventListener('click',function(){stBackKey();});
-  function stBackKey(){if(ST.view==='items') stSelect(0,true); else closeStudio();}
+  function stBackKey(){if(spinning) return; if(ST.view==='items') stSelect(0,true); else if(ST.view==='roul'){stRevert(); ST.view='cats'; ST.idx=0; stFocus(); stRender();} else closeStudio();}
   window.addEventListener('keydown',function(e){
     if(!studio) return;
+    if(ST.view==='roul'){
+      if(e.key==='Enter'){e.preventDefault(); if(!spinning) doSpin();}
+      else if(e.key==='Escape'||e.key==='Backspace'||e.key==='ArrowLeft'){e.preventDefault(); stBackKey();}
+      return;
+    }
+    if(spinning) return;
     var n=(ST.view==='cats')?7:stItems().length+1;
     if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){e.preventDefault(); stSelect((ST.idx+1)%n,false);}
     else if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){e.preventDefault(); stSelect((ST.idx+n-1)%n,false);}
     else if(e.key==='Enter'){e.preventDefault(); if(ST.view==='items'&&ST.idx>0) stEquip(); else stSelect(ST.idx,true);}
     else if(e.key==='Escape'||e.key==='Backspace'||e.key==='ArrowLeft'){e.preventDefault(); stBackKey();}
-    else if(e.key==='ArrowRight'&&ST.view==='cats'&&ST.idx<5){e.preventDefault(); stSelect(ST.idx,true);}
+    else if(e.key==='ArrowRight'&&ST.view==='cats'&&ST.idx>=1&&ST.idx<=5){e.preventDefault(); stSelect(ST.idx,true);}
   },true);
 })();
 
