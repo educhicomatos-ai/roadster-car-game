@@ -2809,6 +2809,7 @@ devUi();
 
 var SHEETS=['homeSheet','howSheet','garageSheet','consoleSheet','endSheet'], garTab='up';
 function showSheet(id){
+  if(id==='garageSheet'){openStudio(); return;}
   SHEETS.forEach(function(s){$(s).hidden=(s!==id);});
   $('overlay').hidden=false; $('overlay').classList.toggle('lite',id==='garageSheet'); $('overlay').classList.toggle('home',id==='homeSheet');
   refreshMoney();
@@ -2950,9 +2951,14 @@ $('garageSheet').addEventListener('click',function(e){
 });
 /* ---------- customization studio: a stylised 3D garage where every change shows on the car at once ---------- */
 var studio=false, GX=4000, GZ=0, garageG=null, garA={};
-var ST={view:'cats',cat:null,focus:'_',idx:0,phi:0.65,h:2.2,r:8.2,dPhi:0,dH:0,zoom:1,idle:0,cmt:{},ring:new THREE.Color('#9aa6c0'),emitT:0};
+var ST={view:'cats',cat:null,focus:'_',idx:0,ty:0.85,tz:0,fx:null,note:'',noteT:0,rings:null,clk:null,phi:0.65,h:2.2,r:8.2,dPhi:0,dH:0,zoom:1,idle:0,cmt:{},ring:new THREE.Color('#9aa6c0'),emitT:0};
 var STCATS=[['paint','Pintura'],['air','Ar dos propulsores'],['trim','Detalhes'],['decal','Adesivos'],['acc','Acessórios']];
-var CAMP={paint:{phi:0.8,h:2.5,r:9.4},air:{phi:2.35,h:1.6,r:9.0},trim:{phi:2.5,h:2.8,r:8.8},decal:{phi:1.5708,h:1.7,r:9.0},acc:{phi:-0.7,h:3.2,r:8.8},_:{phi:0.65,h:2.8,r:10.2}};
+var CAMP={paint:{phi:0.8,h:2.5,r:9.4},air:{phi:2.35,h:1.6,r:9.0},trim:{phi:2.5,h:2.8,r:8.8},decal:{phi:1.5708,h:1.7,r:9.0},acc:{phi:-0.7,h:3.2,r:8.8},_:{phi:0.65,h:2.8,r:10.2},
+  up_motor:{phi:2.75,h:1.3,r:6.2,ty:0.6,tz:1.8},z_motor:{phi:2.55,h:0.9,r:3.7,ty:0.55,tz:2.0},
+  up_tank:{phi:1.45,h:0.9,r:6.4,ty:0.4,tz:0.3},z_tank:{phi:1.5,h:0.45,r:3.6,ty:0.3,tz:0.5},
+  up_armor:{phi:1.15,h:1.3,r:6.4,ty:0.65,tz:0},z_armor:{phi:1.05,h:1.0,r:3.9,ty:0.6,tz:-0.2},
+  up_magnet:{phi:0.45,h:1.8,r:6.6,ty:0.8,tz:-1.5},z_magnet:{phi:0.35,h:1.4,r:4.0,ty:0.8,tz:-1.7},
+  up_clock:{phi:0.95,h:2.1,r:6.2,ty:1.1,tz:0.3},z_clock:{phi:0.8,h:1.9,r:3.8,ty:1.15,tz:0.35}};
 
 function buildGarage(){
   var W=30, D=26, H=9, i, j, x, y;
@@ -3161,15 +3167,22 @@ function stRevert(){var ch=false, k; for(k in ST.cmt) if(save.sel[k]!==ST.cmt[k]
 function stPreview(cat,id){if(save.sel[cat]===id) return; save.sel[cat]=id; applyLook();}
 function stRender(){
   var h='', i;
-  $('stCrumb').textContent=ST.view==='cats'?'Personalização do carro':(ST.view==='roul'?'Roleta de itens':LOOK[ST.cat].title);
+  $('stCrumb').textContent=ST.view==='cats'?'Garagem':(ST.view==='roul'?'Roleta de itens':(ST.view==='upg'?'Melhorias do carro':LOOK[ST.cat].title));
   if(ST.view==='roul'){$('stList').innerHTML=renderRoulView(); stInfo(); $('stMoney').textContent=money(save.money); return;}
   if(ST.view==='cats'){
     h+='<button class="stRow'+(ST.idx===0?' sel':'')+'" type="button" data-i="0" style="--rc:#ffc24a"><span class="stNm">★ Roleta de itens</span><span class="stRt">ganhar itens</span></button>';
+    h+='<button class="stRow'+(ST.idx===1?' sel':'')+'" type="button" data-i="1" style="--rc:#3affc8"><span class="stNm">⚙ Melhorias</span><span class="stRt">motor, tanque…</span></button>';
     STCATS.forEach(function(e,k){
       var cat=e[0], it=lookItem(cat,ST.cmt[cat]);
-      h+='<button class="stRow'+(k+1===ST.idx?' sel':'')+'" type="button" data-i="'+(k+1)+'" style="--rc:'+RAR[it.r].col+'"><span class="stNm">'+e[1]+'</span><span class="stRt">'+it.name+'</span></button>';
+      h+='<button class="stRow'+(k+2===ST.idx?' sel':'')+'" type="button" data-i="'+(k+2)+'" style="--rc:'+RAR[it.r].col+'"><span class="stNm">'+e[1]+'</span><span class="stRt">'+it.name+'</span></button>';
     });
-    h+='<button class="stRow'+(ST.idx===6?' sel':'')+'" type="button" data-i="6"><span class="stNm">‹ Sair do estúdio</span></button>';
+    h+='<button class="stRow'+(ST.idx===7?' sel':'')+'" type="button" data-i="7"><span class="stNm">‹ Sair da garagem</span></button>';
+  }else if(ST.view==='upg'){
+    h+='<button class="stRow'+(ST.idx===0?' sel':'')+'" type="button" data-i="0"><span class="stNm">‹ Voltar</span></button>';
+    UPG.forEach(function(u,k){
+      var lv=up[u.id], mx=u.max||MAXL, max=lv>=mx;
+      h+='<button class="stRow'+(k+1===ST.idx?' sel':'')+'" type="button" data-i="'+(k+1)+'" style="--rc:#3affc8"><span class="stNm">'+u.name+' <small style="opacity:.6">nv '+lv+'</small></span><span class="stRt'+(max?' eq':'')+'">'+(max?'Máximo':(save.dev?'Grátis':'$ '+upPrice(u).toLocaleString('pt-BR')))+'</span></button>';
+    });
   }else{
     h+='<button class="stRow'+(ST.idx===0?' sel':'')+'" type="button" data-i="0"><span class="stNm">‹ Voltar</span></button>';
     stItems().forEach(function(it,k){
@@ -3188,18 +3201,29 @@ function stCur(){
 }
 function stCatOf(){return ST.view==='roul'?(lastWin?lastWin.cat:null):ST.cat;}
 function stInfo(){
-  var el=$('stInfo'), it=null, cat=null, h='', roul=(ST.view==='roul');
+  var el=$('stInfo'), it=null, cat=null, h='', roul=(ST.view==='roul'), nt=ST.note?'<small style="color:var(--good);margin-top:4px">'+ST.note+'</small>':'';
+  if(ST.view==='upg'){
+    var u=UPG[ST.idx-1];
+    el.style.setProperty('--rc','#3affc8'); ST.ring.set('#3affc8');
+    if(!u){el.innerHTML='<b>Melhorias</b><small>Escolha uma melhoria. A câmera mostra a parte do carro que ela melhora.</small>'+nt; return;}
+    var lv=up[u.id], mx=u.max||MAXL, max=lv>=mx, pips='', q, pr=upPrice(u);
+    for(q=0;q<mx;q++) pips+='<i'+(q<lv?' class="on"':'')+'></i>';
+    h='<b>'+u.name+'</b><small>'+u.desc+'</small><div class="pips">'+pips+'</div>'+nt;
+    h+=max?'<button class="buy" type="button" disabled>Máximo</button>':'<button class="buy'+(canPay(pr)?'':' no')+'" type="button" data-sa="buyup">Comprar · '+(save.dev?'Grátis':'$ '+pr.toLocaleString('pt-BR'))+'</button>';
+    el.innerHTML=h; return;
+  }
   if(roul||ST.view==='items'){it=stCur(); cat=stCatOf();}
-  else if(ST.idx>=1&&ST.idx<=5){cat=STCATS[ST.idx-1][0]; it=lookItem(cat,ST.cmt[cat]);}
+  else if(ST.idx>=2&&ST.idx<=6){cat=STCATS[ST.idx-2][0]; it=lookItem(cat,ST.cmt[cat]);}
   if(!it){
     var gold=(roul||(ST.view==='cats'&&ST.idx===0));
     el.style.setProperty('--rc',gold?'#ffc24a':'#28e1ff'); ST.ring.set(gold?'#ffc24a':'#28e1ff');
     if(roul) h='<b>Roleta de itens</b><small>Gire para ganhar um item. Ele aparece no carro na hora, só como pré-visualização: equipe se gostar.</small>';
     else if(ST.view==='items') h='<b>Voltar</b><small>Volta para a lista de categorias. O que você não equipou não é salvo.</small>';
+    else if(ST.idx===1) h='<b>Melhorias</b><small>Motor, tanque de ar, blindagem, ímã e cronômetro. Cada compra dá um zoom na parte melhorada.</small>';
     else if(ST.idx===0) h='<b>Roleta de itens</b><small>Gire para desbloquear pinturas, adesivos e acessórios. O item sorteado aparece no carro na hora.</small>';
-    else if(ST.idx===6) h='<b>Sair</b><small>Volta para a garagem.</small>';
+    else if(ST.idx===7) h='<b>Sair</b><small>Volta ao menu.</small>';
     else h='<b>Estúdio</b><small>Escolha uma categoria. Você vê cada mudança no carro na hora.</small>';
-    el.innerHTML=h; return;
+    el.innerHTML=h+nt; return;
   }
   var col=RAR[it.r].col, own=stOwn(cat,it.id), eq=(ST.cmt[cat]===it.id);
   el.style.setProperty('--rc',col); ST.ring.set(col);
@@ -3209,9 +3233,10 @@ function stInfo(){
     else if(own) h+='<button class="buy" type="button" data-sa="equip">Equipar</button>';
     else h+='<button class="buy no" type="button" data-sa="roulette">Ir para a roleta</button>';
   }
-  el.innerHTML=h;
+  el.innerHTML=h+nt;
 }
-function stFocus(){ST.focus=(ST.view==='items')?ST.cat:(ST.view==='roul'?'_':(ST.idx>=1&&ST.idx<=5?STCATS[ST.idx-1][0]:'_'));}
+function stNote(t){ST.note=t; ST.noteT=3; stInfo();}
+function stFocus(){ST.focus=(ST.view==='items')?ST.cat:(ST.view==='roul'?'_':(ST.view==='upg'?(ST.idx>0?'up_'+UPG[ST.idx-1].id:'_'):(ST.idx>=2&&ST.idx<=6?STCATS[ST.idx-2][0]:'_')));}
 function stGoRoul(){stRevert(); ST.view='roul'; ST.cat=null; lastWin=null; lastStrip=null; stFocus(); sfx('tick'); stRender();}
 function stSelect(i,act){
   if(spinning) return;
@@ -3219,13 +3244,18 @@ function stSelect(i,act){
     ST.idx=i; stFocus();
     if(act){
       if(i===0){stGoRoul(); return;}
-      if(i>=1&&i<=5){ST.cat=STCATS[i-1][0]; ST.view='items'; var cur=-1, a=stItems(); for(var k=0;k<a.length;k++) if(a[k].id===ST.cmt[ST.cat]) cur=k; ST.idx=cur+1; stFocus(); sfx('tick');}
+      if(i===1){ST.view='upg'; ST.cat=null; ST.idx=0; stFocus(); sfx('tick'); stRender(); return;}
+      if(i>=2&&i<=6){ST.cat=STCATS[i-2][0]; ST.view='items'; var cur=-1, a=stItems(); for(var k=0;k<a.length;k++) if(a[k].id===ST.cmt[ST.cat]) cur=k; ST.idx=cur+1; stFocus(); sfx('tick');}
       else{closeStudio(); return;}
     }
     stRender(); return;
   }
+  if(ST.view==='upg'){
+    if(i===0){if(act){ST.view='cats'; ST.idx=1; stFocus(); sfx('tick'); stRender(); return;} ST.idx=0; stFocus(); stRender(); return;}
+    ST.idx=i; if(!ST.fx) stFocus(); if(act) stBuy(); else{sfx('tick'); stRender();} return;
+  }
   if(i===0){
-    if(act){stRevert(); ST.idx=STCATS.map(function(e){return e[0];}).indexOf(ST.cat)+1; ST.view='cats'; ST.cat=null; stFocus(); sfx('tick'); stRender(); return;}
+    if(act){stRevert(); ST.idx=STCATS.map(function(e){return e[0];}).indexOf(ST.cat)+2; ST.view='cats'; ST.cat=null; stFocus(); sfx('tick'); stRender(); return;}
     ST.idx=0; stRevert(); stRender(); return;
   }
   var it=stItems()[i-1]; if(!it) return;
@@ -3233,14 +3263,24 @@ function stSelect(i,act){
   if(act) stEquip();
   else{sfx('tick'); stRender();}
 }
+function stBuy(){
+  var u=UPG[ST.idx-1]; if(!u) return;
+  var pr=upPrice(u);
+  if(up[u.id]>=(u.max||MAXL)){stNote('Já está no máximo.'); return;}
+  if(!canPay(pr)){stNote('Dinheiro insuficiente. Jogue mais corridas.'); sfx('hit'); return;}
+  pay(pr); up[u.id]++; persist(); applyUpgrades(); sfx('pickup'); sfx('bonus');
+  ST.fx={id:u.id,t:0}; ST.focus='z_'+u.id; ST.idle=0; ST.dPhi=0; ST.dH=0;
+  ST.note=u.name+' nível '+up[u.id]+'!'; ST.noteT=3;
+  stRender();
+}
 function stEquip(){
   var it=stCur(), cat=stCatOf(); if(!it||!cat) return;
-  if(!stOwn(cat,it.id)){toast('Bloqueado: ganhe na roleta','info'); sfx('hit'); stRender(); return;}
+  if(!stOwn(cat,it.id)){stNote('Bloqueado: ganhe na roleta.'); sfx('hit'); return;}
   ST.cmt[cat]=it.id; save.sel[cat]=it.id; persist(); applyLook(); sfx('pickup'); stRender();
 }
 function openStudio(){
   initAudio(); if(!garageG) buildGarage();
-  studio=true; ST.view='cats'; ST.idx=0; ST.cat=null; ST.focus='_'; ST.cmt={}; ST.dPhi=0; ST.dH=0; ST.zoom=1; ST.idle=0;
+  studio=true; ST.view='cats'; ST.idx=0; ST.cat=null; ST.focus='_'; ST.ty=0.85; ST.tz=0; ST.fx=null; ST.note=''; ST.cmt={}; ST.dPhi=0; ST.dH=0; ST.zoom=1; ST.idle=0;
   for(var k in LOOK) ST.cmt[k]=save.sel[k];
   $('overlay').hidden=true; $('ui').style.visibility='hidden'; $('studio').hidden=false;
   garageG.visible=true; sky.visible=false;
@@ -3260,20 +3300,52 @@ function closeStudio(next){
   garageG.visible=false; sky.visible=true;
   camera.position.set(c.x,c.y*0.65+3.6,c.z+9.5); camera.fov=60; camera.updateProjectionMatrix(); camera.up.set(0,1,0); camera.lookAt(c.x,1.3,c.z-14);
   P.forEach(function(p){p.life=0; p.m.visible=false;});
-  garTab='up'; garMsg(''); showSheet('garageSheet');
+  garMsg(''); showSheet(state==='over'?'endSheet':'homeSheet');
+}
+
+function upgFx(dt,t){
+  var f=ST.fx, i, id=f.id; f.t+=dt;
+  if(id==='motor'&&f.t<1.8){for(i=0;i<REAR.length;i++) emit(REAR[i],BACK,15,0.6,1.1);}
+  if(id==='tank'&&f.t<1.8){for(i=0;i<BELLY.length;i++) if(Math.random()<0.8) emit(BELLY[i],DOWN,11,0.5,0.9);}
+  if(id==='armor'){
+    var a=Math.max(0,1-f.t/2.0); shieldMesh.visible=a>0; shieldMesh.material.opacity=0.42*a*(0.65+0.35*Math.sin(f.t*26)); shieldMesh.scale.setScalar(1+0.12*Math.sin(f.t*9));
+    if(f.t<0.12) burst(GX+0.95,0.7,GZ,16,0xffc24a,7,0.5);
+  }
+  if(id==='magnet'){
+    if(!ST.rings){ST.rings=[]; for(i=0;i<3;i++){var rm=new THREE.Mesh(new THREE.RingGeometry(0.9,1.0,48),new THREE.MeshBasicMaterial({color:0xff4ad8,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending})); rm.position.set(0,1.0,-1.5); rm.visible=false; garageG.add(rm); ST.rings.push(rm);}}
+    ST.rings.forEach(function(r,k){var u=(f.t-k*0.35)/1.1; r.visible=u>0&&u<1; if(r.visible){r.scale.setScalar(0.5+u*4.5); r.material.opacity=0.9*(1-u); r.lookAt(camera.position);}});
+  }
+  if(id==='clock'){
+    if(!ST.clk){
+      var g=new THREE.Group(), cv=document.createElement('canvas'); cv.width=cv.height=256; var cg=cv.getContext('2d');
+      cg.fillStyle='#14151a'; cg.beginPath(); cg.arc(128,128,120,0,TAU); cg.fill(); cg.strokeStyle='#ffc83a'; cg.lineWidth=12; cg.stroke();
+      cg.fillStyle='#f4f1e6'; for(i=0;i<12;i++){cg.save(); cg.translate(128,128); cg.rotate(i*TAU/12); cg.fillRect(-4,-108,8,i%3?14:26); cg.restore();}
+      var face=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.5),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false})); g.add(face);
+      var hand=new THREE.Mesh(new THREE.PlaneGeometry(0.1,0.55),new THREE.MeshBasicMaterial({color:0xffc83a,transparent:true,depthWrite:false})); hand.geometry.translate(0,0.25,0); hand.position.z=0.01; g.add(hand); g.userData.hand=hand;
+      g.position.set(0,2.5,0.3); g.visible=false; garageG.add(g); ST.clk=g;
+    }
+    var g2=ST.clk, u2=f.t/2.2; g2.visible=u2<1; if(g2.visible){var sc=u2<0.2?u2/0.2*1.25:(u2<0.3?1.25-(u2-0.2)*2.5:1)*(u2>0.8?(1-u2)/0.2:1); g2.scale.setScalar(Math.max(0.01,sc)); g2.position.y=2.5+0.15*Math.sin(f.t*3); g2.userData.hand.rotation.z=-f.t*9; g2.lookAt(camera.position);}
+  }
+  if(f.t>2.5){
+    ST.fx=null; shieldMesh.visible=false; shieldMesh.scale.setScalar(1); if(ST.clk) ST.clk.visible=false; if(ST.rings) ST.rings.forEach(function(r){r.visible=false;});
+    if(ST.view==='upg') stFocus();
+  }
 }
 function studioUpdate(dt){
   var t=performance.now()*0.001, pr=CAMP[ST.focus]||CAMP._, k=1-Math.exp(-3.2*dt);
   ST.idle+=dt;
   var dd=Math.atan2(Math.sin(pr.phi-ST.phi),Math.cos(pr.phi-ST.phi)); ST.phi+=dd*k; ST.h+=(pr.h-ST.h)*k; ST.r+=(pr.r-ST.r)*k;
+  ST.ty+=((pr.ty===undefined?0.85:pr.ty)-ST.ty)*k; ST.tz+=((pr.tz||0)-ST.tz)*k;
   if(ST.idle>3){var dk=Math.exp(-dt*0.6); ST.dPhi*=dk; ST.dH*=dk;}
   var ph=ST.phi+ST.dPhi+Math.sin(t*0.35)*0.22, rr=ST.r*ST.zoom, hh=ST.h+ST.dH+Math.sin(t*0.5)*0.12;
   camera.position.set(GX+Math.sin(ph)*rr,hh,GZ-Math.cos(ph)*rr);
   var shift=rr*(camera.aspect>1.3?0.2:0.04);
-  camera.lookAt(GX+Math.cos(ph)*shift,0.85,GZ+Math.sin(ph)*shift);
+  camera.lookAt(GX+Math.cos(ph)*shift*(ST.zoomed?0.6:1),ST.ty,GZ+ST.tz+Math.sin(ph)*shift*(ST.zoomed?0.6:1));
   sky.position.copy(camera.position);
   player.position.set(GX,0.145,GZ); player.rotation.set(0,0,0);
   if(garA.upd) garA.upd(t,dt);
+  if(ST.noteT>0){ST.noteT-=dt; if(ST.noteT<=0){ST.note=''; stInfo();}}
+  if(ST.fx) upgFx(dt,t);
   if(ST.focus==='air'){ST.emitT-=dt; while(ST.emitT<=0){ST.emitT+=0.03; REAR.forEach(function(n){emit(n,BACK,10,0.55,0.9);});}}
   updateParticles(dt);
 }
@@ -3301,10 +3373,10 @@ function studioUpdate(dt){
   $('stInfo').addEventListener('click',function(e){
     var b=e.target.closest?e.target.closest('[data-sa]'):null; if(!b) return;
     if(spinning) return;
-    if(b.getAttribute('data-sa')==='equip') stEquip(); else stGoRoul();
+    var sa2=b.getAttribute('data-sa'); if(sa2==='equip') stEquip(); else if(sa2==='buyup') stBuy(); else stGoRoul();
   });
   $('stBack').addEventListener('click',function(){stBackKey();});
-  function stBackKey(){if(spinning) return; if(ST.view==='items') stSelect(0,true); else if(ST.view==='roul'){stRevert(); ST.view='cats'; ST.idx=0; stFocus(); stRender();} else closeStudio();}
+  function stBackKey(){if(spinning) return; if(ST.view==='items'||ST.view==='upg') stSelect(0,true); else if(ST.view==='roul'){stRevert(); ST.view='cats'; ST.idx=0; stFocus(); stRender();} else closeStudio();}
   window.addEventListener('keydown',function(e){
     if(!studio) return;
     if(ST.view==='roul'){
@@ -3313,12 +3385,12 @@ function studioUpdate(dt){
       return;
     }
     if(spinning) return;
-    var n=(ST.view==='cats')?7:stItems().length+1;
+    var n=(ST.view==='cats')?8:(ST.view==='upg'?UPG.length+1:stItems().length+1);
     if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){e.preventDefault(); stSelect((ST.idx+1)%n,false);}
     else if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){e.preventDefault(); stSelect((ST.idx+n-1)%n,false);}
-    else if(e.key==='Enter'){e.preventDefault(); if(ST.view==='items'&&ST.idx>0) stEquip(); else stSelect(ST.idx,true);}
+    else if(e.key==='Enter'){e.preventDefault(); if(ST.view==='items'&&ST.idx>0) stEquip(); else if(ST.view==='upg'&&ST.idx>0) stBuy(); else stSelect(ST.idx,true);}
     else if(e.key==='Escape'||e.key==='Backspace'||e.key==='ArrowLeft'){e.preventDefault(); stBackKey();}
-    else if(e.key==='ArrowRight'&&ST.view==='cats'&&ST.idx>=1&&ST.idx<=5){e.preventDefault(); stSelect(ST.idx,true);}
+    else if(e.key==='ArrowRight'&&ST.view==='cats'&&ST.idx>=1&&ST.idx<=6){e.preventDefault(); stSelect(ST.idx,true);}
   },true);
 })();
 
