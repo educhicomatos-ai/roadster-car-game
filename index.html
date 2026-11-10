@@ -611,7 +611,7 @@ if(!window.THREE){
   return;
 }
 /* Ranking global (Supabase). Preencha as duas linhas abaixo com a URL e a chave pública (anon) do seu projeto. */
-var RANK={url:'',key:''};
+var RANK={url:'https://pdmcwtzsisqpshkmpxrh.supabase.co',key:'sb_publishable_F_uYc5vY-aN7qg9j7Qi3Zg_VLtQ8LJN'};
 var clamp=function(v,a,b){return Math.max(a,Math.min(b,v));};
 var rand=function(a,b){return a+Math.random()*(b-a);};
 var TAU=Math.PI*2;
@@ -3734,7 +3734,8 @@ function rkPid(){
 }
 function rkFetch(path,opts){
   opts=opts||{}; var ctl=(typeof AbortController!=='undefined')?new AbortController():null, to=setTimeout(function(){if(ctl) ctl.abort();},9000);
-  opts.headers=Object.assign({apikey:RANK.key,Authorization:'Bearer '+RANK.key,'Content-Type':'application/json'},opts.headers||{});
+  opts.headers=Object.assign({apikey:RANK.key,'Content-Type':'application/json'},opts.headers||{});
+  if(RANK.key.indexOf('eyJ')===0) opts.headers.Authorization='Bearer '+RANK.key; /* chaves sb_publishable não são JWT: só vão em apikey */
   if(ctl) opts.signal=ctl.signal;
   return fetch(RANK.url.replace(/\/+$/,'')+'/rest/v1/'+path,opts).then(function(r){clearTimeout(to); return r;},function(e){clearTimeout(to); throw e;});
 }
