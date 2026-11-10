@@ -406,6 +406,23 @@ button.go.sm{height:clamp(40px,7vh,48px);font-size:clamp(18px,3.8vh,22px)}
 .cluster .btn:not(.small){font-size:clamp(13px,2.6vh,19px);letter-spacing:0}
 .cluster .btn.small{font-size:clamp(14px,2.6vh,18px)}
 @media (prefers-reduced-motion:reduce){.sheet:not(#homeSheet){animation:none!important}}
+.mb:nth-child(6){min-width:clamp(190px,42vh,300px);animation-delay:.35s}
+.mb{height:clamp(32px,7.8vh,52px)}
+.rkme{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;padding:7px 12px;background:rgba(255,200,58,.08);box-shadow:inset 0 -3px 0 rgba(255,200,58,.55);font:700 clamp(16px,3.4vh,20px) var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--cream)}
+.rkme b{color:var(--gold);font-weight:700}
+.rkme button{border:0;background:none;color:var(--gold);font:700 13px var(--display);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;text-decoration:underline;pointer-events:auto}
+.rkform{display:grid;grid-template-columns:1fr auto;gap:8px;margin:0 0 10px;align-items:start}
+.rkform .cmd{margin:0;height:44px}
+.rkform .go{width:auto;padding:0 18px;height:44px;font-size:20px}
+.rklist{max-height:min(38vh,300px);overflow-y:auto;margin:0 0 8px;touch-action:pan-y}
+.rkrow{display:grid;grid-template-columns:38px 1fr auto;gap:8px;align-items:baseline;padding:5px 8px;border-bottom:1px dashed rgba(255,200,58,.2);font:700 clamp(17px,3.6vh,21px) var(--display);letter-spacing:.04em;color:#fff}
+.rkrow i{font-style:normal;color:rgba(230,220,192,.7)}
+.rkrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase}
+.rkrow em{font-style:normal;color:var(--gold);font-variant-numeric:tabular-nums}
+.rkrow:nth-child(1) i,.rkrow:nth-child(1) em{color:#ffd84a}.rkrow:nth-child(2) i{color:#d6dbe6}.rkrow:nth-child(3) i{color:#d9925a}
+.rkrow.me{background:rgba(255,200,58,.16)}
+@media (max-height:520px){.rklist{max-height:34vh}}
+@media (max-height:720px){.results{gap:8px;margin-bottom:12px}.results .wide{grid-column:auto}.results .big{font-size:clamp(30px,7vh,44px)}.sheet h1{margin-bottom:8px}}
 </style>
 
 <div id="stage"><canvas id="gl"></canvas><div id="speedfx"></div><div id="danger"></div><div id="flash"></div></div>
@@ -491,6 +508,7 @@ button.go.sm{height:clamp(40px,7vh,48px);font-size:clamp(18px,3.8vh,22px)}
     <div id="homeMenu">
       <button class="mb sel" id="start" type="button">Jogar</button>
       <button class="mb" id="goGarage" type="button">Garagem</button>
+      <button class="mb" id="goRank" type="button">Ranking</button>
       <button class="mb" id="goHow" type="button">Como jogar</button>
       <button class="mb" id="goConsole" type="button">Console</button>
       <button class="mb" id="dlGame" type="button" hidden>Baixar para o celular</button>
@@ -549,6 +567,19 @@ button.go.sm{height:clamp(40px,7vh,48px);font-size:clamp(18px,3.8vh,22px)}
     <button class="go" id="conBack" type="button">Voltar</button>
   </div>
 
+  <div class="sheet" id="rankSheet" hidden>
+    <p class="kicker">Ranking global</p>
+    <h1>Os <span>melhores</span></h1>
+    <div class="rkme" id="rkMe"></div>
+    <form class="rkform" id="rkForm" hidden>
+      <input class="cmd" id="rkName" type="text" maxlength="12" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Apelido (3-12)" aria-label="Apelido">
+      <button class="go sm" id="rkSave" type="submit">Salvar apelido</button>
+    </form>
+    <div class="rklist" id="rkList" role="list"></div>
+    <p class="note" id="rkMsg" style="min-height:16px"></p>
+    <button class="go alt" id="rkBack" type="button">Voltar</button>
+  </div>
+
   <div class="sheet" id="endSheet" hidden>
     <p class="kicker">Fim da corrida <span class="badge" id="endBadge" hidden>Novo recorde</span></p>
     <h1>Tempo <span>esgotado</span></h1>
@@ -558,8 +589,10 @@ button.go.sm{height:clamp(40px,7vh,48px);font-size:clamp(18px,3.8vh,22px)}
       <div class="wide"><span class="lbl">Distância</span><span class="big"><span id="endDist">0</span><span class="unit">m</span></span></div>
       <div class="wide"><span class="lbl">Dinheiro ganho</span><span class="big coin" id="endMoney">$ 0</span></div>
     </div>
+    <p class="note" id="endRank" style="margin:-6px 0 12px;min-height:16px" hidden></p>
     <div class="menu-btns">
       <button class="go" id="again" type="button">Jogar de novo</button>
+      <button class="go alt sm" id="endRankBtn" type="button">Ranking global</button>
       <button class="go alt sm" id="endGarage" type="button">Garagem</button>
       <button class="go alt sm" id="endMenu" type="button">Menu</button>
     </div>
@@ -577,6 +610,8 @@ if(!window.THREE){
   $('start').disabled=true;
   return;
 }
+/* Ranking global (Supabase). Preencha as duas linhas abaixo com a URL e a chave pública (anon) do seu projeto. */
+var RANK={url:'',key:''};
 var clamp=function(v,a,b){return Math.max(a,Math.min(b,v));};
 var rand=function(a,b){return a+Math.random()*(b-a);};
 var TAU=Math.PI*2;
@@ -2680,7 +2715,7 @@ var LOOK={
     {id:'neon',name:'Neon arco-íris no chão',r:'l',c:0xff3a3a},{id:'wings',name:'Asas douradas',r:'l',c:0xfff4d0}]}
 };
 function freshSave(dev){
-  var d={money:0,dev:!!dev,up:{motor:0,tank:0,armor:0,magnet:0,clock:0},own:{},sel:{}};
+  var d={money:0,dev:!!dev,name:'',pid:'',pend:null,up:{motor:0,tank:0,armor:0,magnet:0,clock:0},own:{},sel:{}};
   for(var cat in LOOK){d.own[cat]=[LOOK[cat].items[0].id]; d.sel[cat]=LOOK[cat].items[0].id;}
   return d;
 }
@@ -2892,6 +2927,8 @@ function loadSave(){
     var r=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
     if(r){
       d.money=Math.max(0,Math.floor(Number(r.money)||0)); d.dev=!!r.dev;
+      d.name=String(r.name||'').slice(0,12); d.pid=String(r.pid||'').slice(0,64);
+      d.pend=(r.pend&&r.pend.s>0)?{s:Math.floor(r.pend.s),d:Math.floor(r.pend.d)||0}:null;
       UPG.forEach(function(u){d.up[u.id]=clamp(Math.floor(Number(r.up&&r.up[u.id])||0),0,u.max||MAXL);});
       for(var cat in LOOK){
         var ids=LOOK[cat].items.map(function(x){return x.id;});
@@ -2976,7 +3013,7 @@ $('devNow').addEventListener('click',function(){
 });
 devUi();
 
-var SHEETS=['homeSheet','howSheet','garageSheet','consoleSheet','endSheet'], garTab='up';
+var SHEETS=['homeSheet','howSheet','garageSheet','consoleSheet','endSheet','rankSheet'], garTab='up';
 function showSheet(id){
   if(id==='garageSheet'){openStudio(); return;}
   SHEETS.forEach(function(s){$(s).hidden=(s!==id);});
@@ -2984,6 +3021,7 @@ function showSheet(id){
   refreshMoney();
   if(id==='garageSheet') renderGarage();
   if(id==='consoleSheet'){setTimeout(function(){var i=$('cmdIn'); i.focus();},30);}
+  if(id==='rankSheet') rkOpen();
 }
 function hx(n){return '#'+('000000'+n.toString(16)).slice(-6);}
 function swatchCss(it,cat){
@@ -3622,7 +3660,7 @@ function studioUpdate(dt){
 
 /* keyboard / hover navigation for the start menu */
 (function(){
-  var btns=['start','goGarage','goHow','goConsole','dlGame'].map($), sel=0;
+  var btns=['start','goGarage','goRank','goHow','goConsole','dlGame'].map($), sel=0;
   function vis(){return btns.filter(function(b){return !b.hidden;});}
   function mark(i){var v=vis(); sel=(i+v.length)%v.length; btns.forEach(function(b){b.classList.remove('sel');}); v[sel].classList.add('sel');}
   btns.forEach(function(b){b.addEventListener('mouseenter',function(){mark(vis().indexOf(b));});});
@@ -3644,7 +3682,7 @@ function runCommand(raw){
     sfx(save.dev?'bonus':'tick');
   }else if(cmd==='/RESET'){
     var dev=save.dev;
-    save=freshSave(dev);
+    var kn=save.name,kp=save.pid; save=freshSave(dev); save.name=kn; save.pid=kp;
     up=save.up; persist(); applyUpgrades(); applyLook(); refreshMoney(); devUi(); conLog('<b>Progresso zerado.</b> Dinheiro, melhorias e visual voltaram ao início.');
   }else if(cmd==='/HELP'||cmd==='/'){
     conLog('Comandos:\n<b>/DEV</b> liga ou desliga dinheiro infinito\n<b>/RESET</b> zera o progresso\n<b>/HELP</b> mostra esta lista');
@@ -3663,6 +3701,105 @@ window.addEventListener('keydown',function(e){
 });
 $('goGarage').addEventListener('click',function(){this.blur(); initAudio(); garMsg(''); showSheet('garageSheet');});
 $('endGarage').addEventListener('click',function(){this.blur(); initAudio(); garMsg(''); showSheet('garageSheet');});
+
+/* ---------- ranking global ---------- */
+var rkFrom='homeSheet', rkBusy=false;
+var RK_BAD=['porra','caralho','puta','putaria','viado','veado','buceta','boceta','foda','foder','fodase','fodido','cuzao','merda','bosta','arrombado','otario','vagabund','piranha','punheta','pirocao','rola','estupr','pedofil','nazi','hitler','racista','macaco','crioulo','fuck','shit','bitch','cunt','dick','pussy','nigger','nigga','faggot','whore','slut','rape','cock','asshole'];
+var RK_SHORT=['cu','fdp','pnc','vsf','tnc','xxx','kkk','pau','pqp','vtnc'];
+function rkNorm(n){
+  var m={'0':'o','1':'i','3':'e','4':'a','5':'s','7':'t','8':'b','@':'a','$':'s','!':'i','|':'i'};
+  return n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[0134578@$!|]/g,function(ch){return m[ch];});
+}
+function rkBad(name){
+  var t=rkNorm(name), toks=t.split(/[^a-z]+/).filter(Boolean), flat=t.replace(/[^a-z]/g,''), flat2=flat.replace(/(.)\1+/g,'$1'), i;
+  for(i=0;i<toks.length;i++) if(RK_SHORT.indexOf(toks[i])>=0) return true;
+  if(RK_SHORT.indexOf(flat)>=0||RK_SHORT.indexOf(flat2)>=0) return true;
+  for(i=0;i<RK_BAD.length;i++){var w=RK_BAD[i]; if(flat.indexOf(w)>=0||flat2.indexOf(w.replace(/(.)\1+/g,'$1'))>=0) return true;}
+  return false;
+}
+function rkCheckName(raw){
+  var n=String(raw||'').replace(/\s+/g,' ').trim();
+  if(n.length<3||n.length>12) return {ok:false,msg:'O apelido precisa ter de 3 a 12 caracteres.'};
+  if(!/^[A-Za-zÀ-ÿ0-9 _.\-]+$/.test(n)) return {ok:false,msg:'Use só letras, números, espaço, ponto, hífen ou _.'};
+  if(rkBad(n)) return {ok:false,msg:'Esse apelido não é permitido. Escolha outro.'};
+  return {ok:true,name:n};
+}
+function rkOn(){return !!(RANK.url&&RANK.key);}
+function rkPid(){
+  if(!save.pid||save.pid.length<16){
+    var a=new Uint8Array(16); try{crypto.getRandomValues(a);}catch(e){for(var i=0;i<16;i++) a[i]=Math.floor(Math.random()*256);}
+    save.pid=Array.prototype.map.call(a,function(b){return ('0'+b.toString(16)).slice(-2);}).join(''); persist();
+  }
+  return save.pid;
+}
+function rkFetch(path,opts){
+  opts=opts||{}; var ctl=(typeof AbortController!=='undefined')?new AbortController():null, to=setTimeout(function(){if(ctl) ctl.abort();},9000);
+  opts.headers=Object.assign({apikey:RANK.key,Authorization:'Bearer '+RANK.key,'Content-Type':'application/json'},opts.headers||{});
+  if(ctl) opts.signal=ctl.signal;
+  return fetch(RANK.url.replace(/\/+$/,'')+'/rest/v1/'+path,opts).then(function(r){clearTimeout(to); return r;},function(e){clearTimeout(to); throw e;});
+}
+function rkSubmit(sc,dist){
+  /* devolve uma promessa com {rank,total,best} ou rejeita; guarda a pontuação para tentar de novo se falhar */
+  if(!rkOn()||!save.name) return Promise.reject(new Error('off'));
+  var s0=Math.max(sc,save.pend?save.pend.s:0), d0=(save.pend&&save.pend.s>sc)?save.pend.d:dist;
+  if(s0<=0) return Promise.reject(new Error('zero'));
+  return rkFetch('rpc/submit_score',{method:'POST',body:JSON.stringify({p_id:rkPid(),p_name:save.name,p_score:Math.floor(s0),p_dist:Math.floor(d0)})}).then(function(r){
+    if(!r.ok) throw new Error('http '+r.status);
+    return r.json();
+  }).then(function(j){save.pend=null; persist(); return j;},function(e){save.pend={s:Math.floor(s0),d:Math.floor(d0)}; persist(); throw e;});
+}
+function rkAfterRun(sc,dist){
+  var el=$('endRank'); if(!rkOn()){el.hidden=true; return;}
+  el.hidden=false;
+  if(!save.name){el.textContent='Defina um apelido em Ranking global para entrar na disputa.'; return;}
+  if(sc<=0&&!save.pend){el.textContent='Faça pontos para entrar no ranking.'; return;}
+  el.textContent='Enviando pontuação…';
+  rkSubmit(sc,dist).then(function(j){ if(state==='over') el.textContent='Ranking global: #'+j.rank+' de '+j.total+' jogadores · seu melhor: '+j.best; },function(){ if(state==='over') el.textContent=(sc>0||save.pend)?'Sem conexão: sua pontuação será enviada na próxima vez.':''; });
+}
+function rkMeRender(){
+  var me=$('rkMe'); me.textContent='';
+  if(!rkOn()||!save.name){me.hidden=true; return;}
+  me.hidden=false;
+  var l=document.createElement('span'); l.appendChild(document.createTextNode('Você: ')); var b=document.createElement('b'); b.textContent=save.name; l.appendChild(b);
+  var bt=document.createElement('button'); bt.type='button'; bt.textContent='Mudar apelido'; bt.addEventListener('click',function(){$('rkForm').hidden=false; $('rkName').value=save.name; $('rkName').focus();});
+  me.appendChild(l); me.appendChild(bt);
+}
+function rkRender(rows){
+  var list=$('rkList'); list.textContent='';
+  if(!rows.length){var e=document.createElement('p'); e.className='note'; e.textContent='Ainda não há pontuações. Seja o primeiro!'; list.appendChild(e); return;}
+  rows.forEach(function(r,i){
+    var d=document.createElement('div'); d.className='rkrow'+((save.name&&r.name===save.name&&Number(r.score)===best_get())?' me':''); d.setAttribute('role','listitem');
+    var a=document.createElement('i'); a.textContent=(i+1)+'.'; var n=document.createElement('span'); n.textContent=r.name; var sc=document.createElement('em'); sc.textContent=Number(r.score).toLocaleString('pt-BR');
+    d.appendChild(a); d.appendChild(n); d.appendChild(sc); list.appendChild(d);
+  });
+}
+function rkLoad(){
+  var msg=$('rkMsg'); msg.textContent='Carregando…';
+  rkFetch('leaderboard?select=name,score,dist&order=score.desc&limit=50').then(function(r){if(!r.ok) throw new Error('http'); return r.json();}).then(function(rows){
+    msg.textContent=''; rkRender(rows);
+  },function(){msg.textContent='Não consegui carregar o ranking. Verifique a conexão e tente de novo.'; $('rkList').textContent='';});
+}
+function rkOpen(){
+  var msg=$('rkMsg'), list=$('rkList');
+  $('rkForm').hidden=true; list.textContent=''; msg.textContent='';
+  if(!rkOn()){msg.textContent='O ranking global ainda não foi ativado neste jogo.'; $('rkMe').hidden=true; return;}
+  if(!save.name){$('rkForm').hidden=false; $('rkName').value=''; setTimeout(function(){$('rkName').focus();},60);}
+  rkMeRender(); rkLoad();
+  if(save.name&&save.pend) rkSubmit(0,0).then(function(){rkLoad();},function(){});
+}
+$('rkForm').addEventListener('submit',function(e){
+  e.preventDefault(); var r=rkCheckName($('rkName').value), msg=$('rkMsg');
+  if(!r.ok){msg.textContent=r.msg; sfx('hit'); return;}
+  save.name=r.name; persist(); $('rkForm').hidden=true; rkMeRender(); sfx('pickup');
+  var bs=Math.max(save.pend?save.pend.s:0,best_get());
+  if(bs>0){msg.textContent='Enviando…'; rkSubmit(bs,0).then(function(){rkLoad();},function(){msg.textContent='Apelido salvo. A pontuação será enviada quando houver conexão.';});}
+  else{msg.textContent='Apelido salvo! Faça pontos para entrar no ranking.'; rkLoad();}
+});
+function best_get(){return best|0;}
+$('rkName').addEventListener('keydown',function(e){e.stopPropagation(); if(e.key==='Escape'){this.blur(); showSheet(rkFrom);}});
+$('goRank').addEventListener('click',function(){this.blur(); rkFrom='homeSheet'; showSheet('rankSheet');});
+$('endRankBtn').addEventListener('click',function(){this.blur(); rkFrom='endSheet'; showSheet('rankSheet');});
+$('rkBack').addEventListener('click',function(){this.blur(); showSheet(rkFrom);});
 $('goHow').addEventListener('click',function(){this.blur(); showSheet('howSheet');});
 $('goConsole').addEventListener('click',function(){this.blur(); showSheet('consoleSheet');});
 $('howBack').addEventListener('click',function(){this.blur(); showSheet('homeSheet');});
@@ -3694,6 +3831,7 @@ function endGame(){
   $('endMoney').textContent='+ $ '+earned.toLocaleString('pt-BR');
   showSheet('endSheet');
   countUp($('endScore'),s,1100);
+  rkAfterRun(s,Math.round(c.dist));
   sfx(rec?'record':'over');
   kb.left=kb.right=kb.brake=kb.boost=kb.lift=false;
   elDanger.classList.remove('on');
