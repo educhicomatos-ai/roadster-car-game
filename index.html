@@ -3741,7 +3741,7 @@ function rkFetch(path,opts){
 }
 function rkSubmit(sc,dist){
   /* devolve uma promessa com {rank,total,best} ou rejeita; guarda a pontuação para tentar de novo se falhar */
-  if(!rkOn()||!save.name) return Promise.reject(new Error('off'));
+  if(!rkOn()||!save.name||save.dev) return Promise.reject(new Error('off'));
   var s0=Math.max(sc,save.pend?save.pend.s:0), d0=(save.pend&&save.pend.s>sc)?save.pend.d:dist;
   if(s0<=0) return Promise.reject(new Error('zero'));
   return rkFetch('rpc/submit_score',{method:'POST',body:JSON.stringify({p_id:rkPid(),p_name:save.name,p_score:Math.floor(s0),p_dist:Math.floor(d0)})}).then(function(r){
@@ -3752,6 +3752,7 @@ function rkSubmit(sc,dist){
 function rkAfterRun(sc,dist){
   var el=$('endRank'); if(!rkOn()){el.hidden=true; return;}
   el.hidden=false;
+  if(save.dev){el.textContent='Modo DEV ativo: esta pontuação não entra no ranking.'; return;}
   if(!save.name){el.textContent='Defina um apelido em Ranking global para entrar na disputa.'; return;}
   if(sc<=0&&!save.pend){el.textContent='Faça pontos para entrar no ranking.'; return;}
   el.textContent='Enviando pontuação…';
@@ -3759,7 +3760,7 @@ function rkAfterRun(sc,dist){
 }
 function rkMeRender(){
   var me=$('rkMe'); me.textContent='';
-  if(!rkOn()||!save.name){me.hidden=true; return;}
+  if(!rkOn()||!save.name||save.dev){me.hidden=true; return;}
   me.hidden=false;
   var l=document.createElement('span'); l.appendChild(document.createTextNode('Você: ')); var b=document.createElement('b'); b.textContent=save.name; l.appendChild(b);
   var bt=document.createElement('button'); bt.type='button'; bt.textContent='Mudar apelido'; bt.addEventListener('click',function(){$('rkForm').hidden=false; $('rkName').value=save.name; $('rkName').focus();});
@@ -3777,19 +3778,21 @@ function rkRender(rows){
 function rkLoad(){
   var msg=$('rkMsg'); msg.textContent='Carregando…';
   rkFetch('leaderboard?select=name,score,dist&order=score.desc&limit=50').then(function(r){if(!r.ok) throw new Error('http'); return r.json();}).then(function(rows){
-    msg.textContent=''; rkRender(rows);
+    msg.textContent=save.dev?'Modo DEV ativo: suas pontuações não são enviadas ao ranking.':''; rkRender(rows);
   },function(){msg.textContent='Não consegui carregar o ranking. Verifique a conexão e tente de novo.'; $('rkList').textContent='';});
 }
 function rkOpen(){
   var msg=$('rkMsg'), list=$('rkList');
   $('rkForm').hidden=true; list.textContent=''; msg.textContent='';
   if(!rkOn()){msg.textContent='O ranking global ainda não foi ativado neste jogo.'; $('rkMe').hidden=true; return;}
-  if(!save.name){$('rkForm').hidden=false; $('rkName').value=''; setTimeout(function(){$('rkName').focus();},60);}
+  if(!save.name&&!save.dev){$('rkForm').hidden=false; $('rkName').value=''; setTimeout(function(){$('rkName').focus();},60);}
   rkMeRender(); rkLoad();
+  if(save.dev) msg.textContent='Modo DEV ativo: você pode ver o ranking, mas suas pontuações não são enviadas. Digite /DEV no console para desativar.';
   if(save.name&&save.pend) rkSubmit(0,0).then(function(){rkLoad();},function(){});
 }
 $('rkForm').addEventListener('submit',function(e){
   e.preventDefault(); var r=rkCheckName($('rkName').value), msg=$('rkMsg');
+  if(save.dev){msg.textContent='Modo DEV ativo: não é possível participar do ranking.'; return;}
   if(!r.ok){msg.textContent=r.msg; sfx('hit'); return;}
   save.name=r.name; persist(); $('rkForm').hidden=true; rkMeRender(); sfx('pickup');
   var bs=Math.max(save.pend?save.pend.s:0,best_get());
