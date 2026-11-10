@@ -3795,7 +3795,7 @@ $('rkForm').addEventListener('submit',function(e){
   if(save.dev){msg.textContent='Modo DEV ativo: não é possível participar do ranking.'; return;}
   if(!r.ok){msg.textContent=r.msg; sfx('hit'); return;}
   save.name=r.name; persist(); $('rkForm').hidden=true; rkMeRender(); sfx('pickup');
-  var bs=Math.max(save.pend?save.pend.s:0,best_get());
+  var bs=save.pend?save.pend.s:0; /* só pontuações de corridas feitas com o ranking ativo; o recorde antigo do aparelho não é enviado */
   if(bs>0){msg.textContent='Enviando…'; rkSubmit(bs,0).then(function(){rkLoad();},function(){msg.textContent='Apelido salvo. A pontuação será enviada quando houver conexão.';});}
   else{msg.textContent='Apelido salvo! Faça pontos para entrar no ranking.'; rkLoad();}
 });
