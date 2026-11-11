@@ -3899,8 +3899,28 @@ function acAdopt(row){
 }
 function acQueue(){
   if(typeof AC==='undefined'||!AC.uid||!save.acct||save.acct!==AC.uid||acRemote) return;
-  acDirty=true; clearTimeout(acTimer); acTimer=setTimeout(acPush,3500);
+  acDirty=true; clearTimeout(acTimer); acTimer=setTimeout(acAuto,2500);
 }
+/* envio automático: tenta de novo sozinho se falhar (sem internet etc.) */
+function acAuto(){
+  if(!AC.uid||!acDirty||save.acct!==AC.uid||acRemote) return;
+  if(acBusy){acTimer=setTimeout(acAuto,2000); return;}
+  acPush().catch(function(){acDirty=true; clearTimeout(acTimer); acTimer=setTimeout(acAuto,15000);});
+}
+/* ao fechar/esconder o app: manda o que faltar na hora (keepalive sobrevive ao fechamento) */
+function acFlush(){
+  if(!AC.uid||!acDirty||save.acct!==AC.uid||acRemote||!AC.at||AC.exp<=Date.now()+5000) return;
+  try{
+    var now=new Date().toISOString();
+    fetch(acUrl('/rest/v1/profiles?on_conflict=user_id'),{method:'POST',keepalive:true,headers:{apikey:RANK.key,Authorization:'Bearer '+AC.at,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:AC.uid,data:acPack(),updated_at:now})}).then(function(r){if(r.ok){acDirty=false; save.ts=Date.parse(now); persistNoSync();}},function(){});
+  }catch(e){}
+}
+/* puxa mudanças feitas em outro aparelho */
+function acPoll(){ if(AC.uid&&save.acct===AC.uid&&!acDirty&&!acBusy&&!acRemote&&state==='menu'&&!document.hidden) acSync(true); }
+setInterval(acPoll,45000);
+window.addEventListener('focus',acPoll);
+window.addEventListener('pagehide',acFlush);
+document.addEventListener('visibilitychange',function(){ if(document.hidden) acFlush(); });
 function acPush(){
   if(!AC.uid||acBusy) return Promise.resolve();
   acBusy=true;
@@ -3911,9 +3931,9 @@ function acPush(){
     acMsg('Sincronizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'.');
   },function(e){acBusy=false; throw e;});
 }
-function acSync(){
+function acSync(quiet){
   if(!AC.uid) return Promise.resolve();
-  acMsg('Sincronizando…');
+  if(quiet!==true) acMsg('Sincronizando…');
   return acRest('profiles?select=data,updated_at&user_id=eq.'+AC.uid).then(function(r){if(!r.ok) throw new Error('http '+r.status); return r.json();}).then(function(rows){
     var row=rows[0];
     if(!row){save.acct=AC.uid; return acPush();}
@@ -3921,11 +3941,12 @@ function acSync(){
     if(!acHasProgress()){acAdopt(row); acMsg('Progresso da nuvem carregado.'); acRender(); return;}
     if(save.acct===AC.uid){
       if(rts>(save.ts||0)+1500){acAdopt(row); acMsg('Progresso atualizado a partir de outro aparelho.'); acRender();}
+      else if(quiet===true){return;}
       else return acPush();
       return;
     }
     acRemote=row; acMsg(''); acRender();   /* primeiro vínculo com progresso diferente nos dois lados: o jogador decide */
-  }).catch(function(){acMsg('Sem conexão com a nuvem. Tente de novo mais tarde.');});
+  }).catch(function(){if(quiet!==true) acMsg('Sem conexão com a nuvem. Tente de novo mais tarde.');});
 }
 function acMsg(t){var m=$('acMsg'); if(m) m.textContent=t||'';}
 function acHomeBtn(){var b=$('acctBtn'); b.textContent=AC.uid?('☁ '+(AC.name||AC.email||'Conta')):'☁ Entrar / Criar conta'; b.classList.toggle('on',!!AC.uid);}
@@ -3935,7 +3956,7 @@ function acRender(){
   $('acMe').hidden=!AC.uid; $('acConflict').hidden=!acRemote;
   $('acLogin').hidden=!!AC.uid||!ok||(IN_FRAME&&!IN_APK); $('acForm').hidden=!!AC.uid||!ok; $('acSync').hidden=!AC.uid; $('acOut').hidden=!AC.uid;
   if(!ok) lead.textContent='O login ainda não foi ativado neste jogo.';
-  else if(AC.uid) lead.textContent='Você está conectado. Dinheiro, melhorias, visuais, recorde e apelido seguem com você em qualquer aparelho: celular, computador, PWA ou app.';
+  else if(AC.uid) lead.textContent='Você está conectado e tudo é salvo na nuvem automaticamente. Dinheiro, melhorias, visuais, recorde e apelido seguem com você em qualquer aparelho: celular, computador, PWA ou app.';
   else lead.textContent='Crie uma conta (ou entre) para levar seu progresso (dinheiro, melhorias, visuais, recorde e apelido) para qualquer aparelho.'+((IN_FRAME&&!IN_APK)?' O login com Google só funciona fora desta pré-visualização.':'');
   var me=$('acMe'); me.textContent='';
   if(AC.uid){var l=document.createElement('span'); l.appendChild(document.createTextNode('Conta: ')); var b=document.createElement('b'); b.textContent=AC.email||AC.name||'Conta'; l.appendChild(b); me.appendChild(l);}
@@ -4020,8 +4041,8 @@ $('acOut').addEventListener('click',function(){
 });
 function persistNoSync(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}}
 $('acCloud').addEventListener('click',function(){this.blur(); if(!acRemote) return; var row=acRemote; acRemote=null; acAdopt(row); acMsg('Progresso da nuvem carregado.'); acRender();});
-$('acLocal').addEventListener('click',function(){this.blur(); acRemote=null; save.acct=AC.uid; acRender(); acPush().catch(function(){acMsg('Sem conexão: será enviado depois.');});});
-window.addEventListener('online',function(){if(AC.uid&&acDirty) acQueue();});
+$('acLocal').addEventListener('click',function(){this.blur(); acRemote=null; save.acct=AC.uid; acRender(); acPush().catch(function(){acMsg('Sem conexão: será enviado depois.'); acDirty=true; acTimer=setTimeout(acAuto,15000);});});
+window.addEventListener('online',function(){if(AC.uid&&acDirty) acAuto();});
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&AC.uid&&save.acct===AC.uid&&!acDirty&&state==='menu') acSync();});
 acHomeBtn();
 (function(){
