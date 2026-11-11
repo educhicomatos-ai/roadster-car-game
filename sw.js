@@ -1,8 +1,10 @@
 /* Rocket Car Game: service worker.
    - index.html e manifesto: rede primeiro (atualiza sozinho), cache só se estiver offline.
-   - Motor 3D, fontes e ícones: cache primeiro (baixados uma vez, depois funcionam offline). */
-var CACHE='rocket-car-game-v2';
+   - Motor 3D, fontes e ícones: cache primeiro (baixados uma vez, depois funcionam offline).
+   - Supabase (ranking, conta, nuvem): NUNCA passa pelo cache, para todos verem os mesmos dados. */
+var CACHE='rocket-car-game-v3';
 var CORE=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png'];
+var CACHEABLE=['cdnjs.cloudflare.com','fonts.googleapis.com','fonts.gstatic.com'];
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(CORE);}).then(function(){return self.skipWaiting();}));
 });
@@ -14,13 +16,15 @@ self.addEventListener('fetch',function(e){
   var url=new URL(req.url), same=url.origin===location.origin;
   if(same){
     e.respondWith(fetch(req,{cache:'no-cache'}).then(function(res){
-      var copy=res.clone(); caches.open(CACHE).then(function(c){c.put(req,copy);}); return res;
+      if(res.ok){var copy=res.clone(); caches.open(CACHE).then(function(c){c.put(req,copy);});}
+      return res;
     }).catch(function(){return caches.match(req).then(function(m){return m||caches.match('index.html');});}));
-  }else{
+  }else if(CACHEABLE.indexOf(url.hostname)>=0){
     e.respondWith(caches.match(req).then(function(m){
       return m||fetch(req).then(function(res){
-        var copy=res.clone(); caches.open(CACHE).then(function(c){c.put(req,copy);}); return res;
+        if(res.ok||res.type==='opaque'){var copy=res.clone(); caches.open(CACHE).then(function(c){c.put(req,copy);});}
+        return res;
       });
     }));
-  }
+  } /* qualquer outro endereço (Supabase etc.): segue direto para a rede */
 });

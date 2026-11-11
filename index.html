@@ -3770,21 +3770,28 @@ function rkPid(){
   return save.pid;
 }
 function rkFetch(path,opts){
-  opts=opts||{}; var ctl=(typeof AbortController!=='undefined')?new AbortController():null, to=setTimeout(function(){if(ctl) ctl.abort();},9000);
+  opts=opts||{}; if(!opts.cache) opts.cache='no-store'; var ctl=(typeof AbortController!=='undefined')?new AbortController():null, to=setTimeout(function(){if(ctl) ctl.abort();},9000);
   opts.headers=Object.assign({apikey:RANK.key,'Content-Type':'application/json'},opts.headers||{});
   if(RANK.key.indexOf('eyJ')===0) opts.headers.Authorization='Bearer '+RANK.key; /* chaves sb_publishable não são JWT: só vão em apikey */
   if(ctl) opts.signal=ctl.signal;
   return fetch(RANK.url.replace(/\/+$/,'')+'/rest/v1/'+path,opts).then(function(r){clearTimeout(to); return r;},function(e){clearTimeout(to); throw e;});
+}
+var rkMine=null, rkRows=null;
+function rkBody(s0,d0){
+  var b={p_id:rkPid(),p_name:save.name,p_score:Math.floor(s0),p_dist:Math.floor(d0)};
+  /* conta ligada: junta a entrada antiga deste aparelho (id aleatório) com a da conta, sem duplicar o jogador */
+  if(typeof AC!=='undefined'&&AC&&AC.uid&&save.pid&&save.pid!==AC.uid) b.p_old_id=save.pid;
+  return b;
 }
 function rkSubmit(sc,dist){
   /* devolve uma promessa com {rank,total,best} ou rejeita; guarda a pontuação para tentar de novo se falhar */
   if(!rkOn()||!save.name||save.dev) return Promise.reject(new Error('off'));
   var s0=Math.max(sc,save.pend?save.pend.s:0), d0=(save.pend&&save.pend.s>sc)?save.pend.d:dist;
   if(s0<=0) return Promise.reject(new Error('zero'));
-  return rkFetch('rpc/submit_score',{method:'POST',body:JSON.stringify({p_id:rkPid(),p_name:save.name,p_score:Math.floor(s0),p_dist:Math.floor(d0)})}).then(function(r){
+  return rkFetch('rpc/submit_score',{method:'POST',body:JSON.stringify(rkBody(s0,d0))}).then(function(r){
     if(!r.ok) throw new Error('http '+r.status);
     return r.json();
-  }).then(function(j){save.pend=null; persist(); return j;},function(e){save.pend={s:Math.floor(s0),d:Math.floor(d0)}; persist(); throw e;});
+  }).then(function(j){save.pend=null; persist(); if(j&&j.rank) rkMine=j; return j;},function(e){save.pend={s:Math.floor(s0),d:Math.floor(d0)}; persist(); throw e;});
 }
 function rkAfterRun(sc,dist){
   var el=$('endRank'); if(!rkOn()){el.hidden=true; return;}
@@ -3800,27 +3807,32 @@ function rkMeRender(){
   if(!rkOn()||!save.name||save.dev){me.hidden=true; return;}
   me.hidden=false;
   var l=document.createElement('span'); l.appendChild(document.createTextNode('Você: ')); var b=document.createElement('b'); b.textContent=save.name; l.appendChild(b);
+  if(rkMine&&rkMine.rank) l.appendChild(document.createTextNode(' · #'+rkMine.rank+' de '+rkMine.total+' · '+Number(rkMine.best).toLocaleString('pt-BR')));
   var bt=document.createElement('button'); bt.type='button'; bt.textContent='Mudar apelido'; bt.addEventListener('click',function(){$('rkForm').hidden=false; $('rkName').value=save.name; $('rkName').focus();});
   me.appendChild(l); me.appendChild(bt);
 }
 function rkRender(rows){
   var list=$('rkList'); list.textContent='';
   if(!rows.length){var e=document.createElement('p'); e.className='note'; e.textContent='Ainda não há pontuações. Seja o primeiro!'; list.appendChild(e); return;}
+  var rk=0, prev=null;
   rows.forEach(function(r,i){
-    var d=document.createElement('div'); d.className='rkrow'+((save.name&&r.name===save.name&&Number(r.score)===best_get())?' me':''); d.setAttribute('role','listitem');
-    var a=document.createElement('i'); a.textContent=(i+1)+'.'; var n=document.createElement('span'); n.textContent=r.name; var sc=document.createElement('em'); sc.textContent=Number(r.score).toLocaleString('pt-BR');
+    if(prev===null||Number(r.score)!==prev){rk=i+1; prev=Number(r.score);}
+    var d=document.createElement('div'); d.className='rkrow'+((save.name&&rkMine&&r.name===save.name&&Number(r.score)===Number(rkMine.best))?' me':''); d.setAttribute('role','listitem');
+    var a=document.createElement('i'); a.textContent=rk+'.'; var n=document.createElement('span'); n.textContent=r.name; var sc=document.createElement('em'); sc.textContent=Number(r.score).toLocaleString('pt-BR');
     d.appendChild(a); d.appendChild(n); d.appendChild(sc); list.appendChild(d);
   });
 }
 function rkLoad(){
   var msg=$('rkMsg'); msg.textContent='Carregando…';
-  rkFetch('leaderboard?select=name,score,dist&order=score.desc&limit=50').then(function(r){if(!r.ok) throw new Error('http'); return r.json();}).then(function(rows){
-    msg.textContent=save.dev?'Modo DEV ativo: suas pontuações não são enviadas ao ranking.':''; rkRender(rows);
+  var Q='leaderboard?select=name,score,dist&limit=50&offset=0&order=score.desc';
+  rkFetch(Q+',updated_at.asc').then(function(r){return r.ok?r:rkFetch(Q);}).then(function(r){if(!r.ok) throw new Error('http'); return r.json();}).then(function(rows){
+    msg.textContent=save.dev?'Modo DEV ativo: suas pontuações não são enviadas ao ranking.':''; rkRows=rows; rkRender(rows);
+    if(save.name&&!save.dev) rkFetch('rpc/get_rank',{method:'POST',body:JSON.stringify({p_id:rkPid()})}).then(function(r){return r.ok?r.json():null;}).then(function(j){ if(j&&j.rank){rkMine=j; rkMeRender(); if(rkRows) rkRender(rkRows);} },function(){});
   },function(){msg.textContent='Não consegui carregar o ranking. Verifique a conexão e tente de novo.'; $('rkList').textContent='';});
 }
 function rkOpen(){
   var msg=$('rkMsg'), list=$('rkList');
-  $('rkForm').hidden=true; list.textContent=''; msg.textContent='';
+  $('rkForm').hidden=true; list.textContent=''; msg.textContent=''; rkMine=null;
   if(!rkOn()){msg.textContent='O ranking global ainda não foi ativado neste jogo.'; $('rkMe').hidden=true; return;}
   if(!save.name&&!save.dev){$('rkForm').hidden=false; $('rkName').value=''; setTimeout(function(){$('rkName').focus();},60);}
   rkMeRender(); rkLoad();
