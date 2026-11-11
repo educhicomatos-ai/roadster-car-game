@@ -422,6 +422,11 @@ button.go.sm{height:clamp(40px,7vh,48px);font-size:clamp(18px,3.8vh,22px)}
 .rkrow:nth-child(1) i,.rkrow:nth-child(1) em{color:#ffd84a}.rkrow:nth-child(2) i{color:#d6dbe6}.rkrow:nth-child(3) i{color:#d9925a}
 .rkrow.me{background:rgba(255,200,58,.16)}
 @media (max-height:520px){.rklist{max-height:34vh}}
+.acform{display:grid;gap:8px;margin:6px 0 10px}.acform .cmd{margin:0;height:44px;width:100%}
+.lnk{background:none;border:0;color:var(--gold);font:700 13px var(--display);letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;cursor:pointer;justify-self:start;padding:4px 0}
+.acct{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:clamp(8px,2.2vh,18px);border:0;cursor:pointer;padding:9px 16px;font:700 clamp(14px,2.8vh,18px) var(--display);letter-spacing:.1em;text-transform:uppercase;color:#16110a;background:var(--gold) repeating-linear-gradient(115deg,rgba(0,0,0,.07) 0 2px,transparent 2px 9px);clip-path:polygon(0 14%,4% 0,30% 10%,60% 2%,90% 8%,100% 20%,98% 80%,100% 100%,64% 92%,32% 100%,6% 94%,1% 70%);max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct:hover{filter:brightness(1.1)}
+.acct.on{background:#1a1712 var(--hatch);color:var(--gold)}
 @media (max-height:720px){.results{gap:8px;margin-bottom:12px}.results .wide{grid-column:auto}.results .big{font-size:clamp(30px,7vh,44px)}.sheet h1{margin-bottom:8px}}
 </style>
 
@@ -514,6 +519,7 @@ button.go.sm{height:clamp(40px,7vh,48px);font-size:clamp(18px,3.8vh,22px)}
       <button class="mb" id="dlGame" type="button" hidden>Baixar para o celular</button>
     </div>
     <div id="homeStats"><div>Recorde<b id="homeBest">0</b></div><div>Dinheiro<b class="coin" id="homeMoney">$ 0</b></div></div>
+    <button class="acct" id="acctBtn" type="button">☁ Entrar com Google</button>
     <div id="homeFoot"><a href="https://educhicomatos-ai.github.io/roadster-car-game/privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a> · aperte / para o console</div>
   </div>
 
@@ -565,6 +571,34 @@ button.go.sm{height:clamp(40px,7vh,48px);font-size:clamp(18px,3.8vh,22px)}
     <div class="cmdlog" id="cmdLog" role="log">Comandos: /DEV, /RESET, /HELP</div>
     <div id="devPickCon" hidden><p class="catlbl">DEV · próximo evento aleatório</p><div class="dv" id="devListCon" style="margin-bottom:14px"></div></div>
     <button class="go" id="conBack" type="button">Voltar</button>
+  </div>
+
+  <div class="sheet" id="accountSheet" hidden>
+    <p class="kicker">Conta</p>
+    <h1>Mesma <span>conta</span></h1>
+    <p class="lead" id="acLead"></p>
+    <div class="rkme" id="acMe" hidden></div>
+    <div id="acConflict" hidden>
+      <p class="note" style="margin:0 0 10px;color:#fff">Este aparelho e a nuvem têm progressos diferentes. Qual você quer manter?</p>
+      <div class="menu-btns"><button class="go sm" id="acCloud" type="button">Usar o da nuvem</button><button class="go alt sm" id="acLocal" type="button">Usar o deste aparelho</button></div>
+    </div>
+    <form class="acform" id="acForm" novalidate>
+      <input class="cmd" id="acEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email" aria-label="Email">
+      <input class="cmd" id="acPass" type="password" autocomplete="current-password" placeholder="Senha (mín. 6 caracteres)" aria-label="Senha">
+      <div class="menu-btns"><button class="go sm" id="acIn" type="submit">Entrar</button><button class="go alt sm" id="acUp" type="button">Criar conta</button></div>
+      <button class="lnk" id="acForgot" type="button">Esqueci a senha</button>
+    </form>
+    <form class="acform" id="acRec" hidden>
+      <input class="cmd" id="acNew" type="password" autocomplete="new-password" placeholder="Nova senha (mín. 6 caracteres)" aria-label="Nova senha">
+      <button class="go sm" type="submit">Salvar nova senha</button>
+    </form>
+    <div class="menu-btns" style="margin-top:8px">
+      <button class="go alt sm" id="acLogin" type="button">Entrar com Google</button>
+      <button class="go alt sm" id="acSync" type="button" hidden>Sincronizar agora</button>
+      <button class="go alt sm" id="acOut" type="button" hidden>Sair da conta</button>
+    </div>
+    <p class="note" id="acMsg" style="min-height:16px"></p>
+    <button class="go alt" id="acBack" type="button">Voltar</button>
   </div>
 
   <div class="sheet" id="rankSheet" hidden>
@@ -2715,7 +2749,7 @@ var LOOK={
     {id:'neon',name:'Neon arco-íris no chão',r:'l',c:0xff3a3a},{id:'wings',name:'Asas douradas',r:'l',c:0xfff4d0}]}
 };
 function freshSave(dev){
-  var d={money:0,dev:!!dev,name:'',pid:'',pend:null,up:{motor:0,tank:0,armor:0,magnet:0,clock:0},own:{},sel:{}};
+  var d={money:0,dev:!!dev,name:'',pid:'',acct:'',ts:0,pend:null,up:{motor:0,tank:0,armor:0,magnet:0,clock:0},own:{},sel:{}};
   for(var cat in LOOK){d.own[cat]=[LOOK[cat].items[0].id]; d.sel[cat]=LOOK[cat].items[0].id;}
   return d;
 }
@@ -2927,7 +2961,7 @@ function loadSave(){
     var r=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
     if(r){
       d.money=Math.max(0,Math.floor(Number(r.money)||0)); d.dev=!!r.dev;
-      d.name=String(r.name||'').slice(0,12); d.pid=String(r.pid||'').slice(0,64);
+      d.name=String(r.name||'').slice(0,12); d.pid=String(r.pid||'').slice(0,64); d.acct=String(r.acct||'').slice(0,64); d.ts=Number(r.ts)||0;
       d.pend=(r.pend&&r.pend.s>0)?{s:Math.floor(r.pend.s),d:Math.floor(r.pend.d)||0}:null;
       UPG.forEach(function(u){d.up[u.id]=clamp(Math.floor(Number(r.up&&r.up[u.id])||0),0,u.max||MAXL);});
       for(var cat in LOOK){
@@ -2942,7 +2976,7 @@ function loadSave(){
   return d;
 }
 var save=loadSave(), up=save.up;
-function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}}
+function persist(){save.ts=Date.now(); try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){} acQueue();}
 function money(v){return save.dev?'∞':'$ '+Math.floor(v).toLocaleString('pt-BR');}
 function upPrice(u){return Math.round(u.base*Math.pow(1.7,up[u.id])/10)*10;}
 function applyUpgrades(){TANK=Math.round(600*(1+0.2*up.tank));}
@@ -3013,7 +3047,7 @@ $('devNow').addEventListener('click',function(){
 });
 devUi();
 
-var SHEETS=['homeSheet','howSheet','garageSheet','consoleSheet','endSheet','rankSheet'], garTab='up';
+var SHEETS=['homeSheet','howSheet','garageSheet','consoleSheet','endSheet','rankSheet','accountSheet'], garTab='up';
 function showSheet(id){
   if(id==='garageSheet'){openStudio(); return;}
   SHEETS.forEach(function(s){$(s).hidden=(s!==id);});
@@ -3022,6 +3056,7 @@ function showSheet(id){
   if(id==='garageSheet') renderGarage();
   if(id==='consoleSheet'){setTimeout(function(){var i=$('cmdIn'); i.focus();},30);}
   if(id==='rankSheet') rkOpen();
+  if(id==='accountSheet') acRender();
 }
 function hx(n){return '#'+('000000'+n.toString(16)).slice(-6);}
 function swatchCss(it,cat){
@@ -3682,7 +3717,7 @@ function runCommand(raw){
     sfx(save.dev?'bonus':'tick');
   }else if(cmd==='/RESET'){
     var dev=save.dev;
-    var kn=save.name,kp=save.pid; save=freshSave(dev); save.name=kn; save.pid=kp;
+    var kn=save.name,kp=save.pid,ka=save.acct; save=freshSave(dev); save.name=kn; save.pid=kp; save.acct=ka;
     up=save.up; persist(); applyUpgrades(); applyLook(); refreshMoney(); devUi(); conLog('<b>Progresso zerado.</b> Dinheiro, melhorias e visual voltaram ao início.');
   }else if(cmd==='/HELP'||cmd==='/'){
     conLog('Comandos:\n<b>/DEV</b> liga ou desliga dinheiro infinito\n<b>/RESET</b> zera o progresso\n<b>/HELP</b> mostra esta lista');
@@ -3726,6 +3761,8 @@ function rkCheckName(raw){
 }
 function rkOn(){return !!(RANK.url&&RANK.key);}
 function rkPid(){
+  if(typeof AC!=='undefined'&&AC&&AC.uid) return AC.uid;
+  if(typeof AC!=='undefined'&&AC.uid) return AC.uid;
   if(!save.pid||save.pid.length<16){
     var a=new Uint8Array(16); try{crypto.getRandomValues(a);}catch(e){for(var i=0;i<16;i++) a[i]=Math.floor(Math.random()*256);}
     save.pid=Array.prototype.map.call(a,function(b){return ('0'+b.toString(16)).slice(-2);}).join(''); persist();
@@ -3804,6 +3841,177 @@ $('rkName').addEventListener('keydown',function(e){e.stopPropagation(); if(e.key
 $('goRank').addEventListener('click',function(){this.blur(); rkFrom='homeSheet'; showSheet('rankSheet');});
 $('endRankBtn').addEventListener('click',function(){this.blur(); rkFrom='endSheet'; showSheet('rankSheet');});
 $('rkBack').addEventListener('click',function(){this.blur(); showSheet(rkFrom);});
+
+/* ---------- conta (login com Google via Supabase) e progresso na nuvem ---------- */
+var AC={uid:'',email:'',name:'',at:'',rt:'',exp:0}, AC_KEY='rocketcar-auth-v1', acTimer=0, acDirty=false, acBusy=false, acRemote=null;
+var IN_APK=/;\s*wv\)/.test(navigator.userAgent||''), IN_FRAME=(function(){try{return window.self!==window.top;}catch(e){return true;}})();
+function acLoad(){try{var r=JSON.parse(localStorage.getItem(AC_KEY)||'null'); if(r&&r.uid&&r.rt){AC.uid=r.uid; AC.email=r.email||''; AC.name=r.name||''; AC.at=r.at||''; AC.rt=r.rt; AC.exp=r.exp||0;}}catch(e){}}
+function acStore(){try{localStorage.setItem(AC_KEY,JSON.stringify(AC));}catch(e){}}
+function acClear(){AC.uid=AC.email=AC.name=AC.at=AC.rt=''; AC.exp=0; try{localStorage.removeItem(AC_KEY);}catch(e){} save.acct=''; acRemote=null;}
+function acUrl(path){return RANK.url.replace(/\/+$/,'')+path;}
+function acToken(){
+  if(!AC.rt) return Promise.reject(new Error('anon'));
+  if(AC.at&&AC.exp>Date.now()+60000) return Promise.resolve(AC.at);
+  return fetch(acUrl('/auth/v1/token?grant_type=refresh_token'),{method:'POST',headers:{apikey:RANK.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:AC.rt})}).then(function(r){
+    if(!r.ok){ if(r.status===400||r.status===401){acClear(); acRender(); acHomeBtn();} throw new Error('refresh '+r.status); }
+    return r.json();
+  }).then(function(j){AC.at=j.access_token; AC.rt=j.refresh_token||AC.rt; AC.exp=Date.now()+(j.expires_in||3600)*1000; acStore(); return AC.at;});
+}
+function acRest(path,opts){
+  return acToken().then(function(t){
+    opts=opts||{}; opts.headers=Object.assign({apikey:RANK.key,Authorization:'Bearer '+t,'Content-Type':'application/json'},opts.headers||{});
+    return fetch(acUrl('/rest/v1/'+path),opts);
+  });
+}
+function acPack(){return {money:save.money|0,up:save.up,own:save.own,sel:save.sel,name:save.name,best:best|0};}
+function acHasProgress(){var o=false; for(var k in save.own){if(save.own[k].length>1) o=true;} var u=false; for(var q in save.up){if(save.up[q]>0) u=true;} return save.money>0||u||o||best>0;}
+function acSanitize(r){
+  var d=freshSave(false);
+  d.money=Math.max(0,Math.floor(Number(r.money)||0));
+  UPG.forEach(function(u){d.up[u.id]=clamp(Math.floor(Number(r.up&&r.up[u.id])||0),0,u.max||MAXL);});
+  for(var cat in LOOK){
+    var ids=LOOK[cat].items.map(function(x){return x.id;});
+    var own=(r.own&&Array.isArray(r.own[cat]))?r.own[cat].filter(function(x){return ids.indexOf(x)>=0;}):[];
+    if(own.indexOf(ids[0])<0) own.unshift(ids[0]);
+    d.own[cat]=own; d.sel[cat]=(r.sel&&own.indexOf(r.sel[cat])>=0)?r.sel[cat]:ids[0];
+  }
+  d.name=String(r.name||'').slice(0,12);
+  return d;
+}
+function acAdopt(row){
+  var r=row.data||{}, d=acSanitize(r), dev=save.dev, pid=save.pid, pend=save.pend;
+  save=d; save.dev=dev; save.pid=pid; save.pend=pend; save.acct=AC.uid; save.ts=Date.parse(row.updated_at)||Date.now(); up=save.up;
+  var rb=Math.floor(Number(r.best)||0); if(rb>best){best=rb; setBest(rb); $('best').textContent=best; $('menuBest').textContent=best;}
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}
+  applyUpgrades(); applyLook(); refreshMoney();
+}
+function acQueue(){
+  if(typeof AC==='undefined'||!AC.uid||!save.acct||save.acct!==AC.uid||acRemote) return;
+  acDirty=true; clearTimeout(acTimer); acTimer=setTimeout(acPush,3500);
+}
+function acPush(){
+  if(!AC.uid||acBusy) return Promise.resolve();
+  acBusy=true;
+  var now=new Date().toISOString();
+  return acRest('profiles?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:AC.uid,data:acPack(),updated_at:now})}).then(function(r){
+    acBusy=false; if(!r.ok) throw new Error('http '+r.status);
+    acDirty=false; save.acct=AC.uid; save.ts=Date.parse(now); try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}
+    acMsg('Sincronizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'.');
+  },function(e){acBusy=false; throw e;});
+}
+function acSync(){
+  if(!AC.uid) return Promise.resolve();
+  acMsg('Sincronizando…');
+  return acRest('profiles?select=data,updated_at&user_id=eq.'+AC.uid).then(function(r){if(!r.ok) throw new Error('http '+r.status); return r.json();}).then(function(rows){
+    var row=rows[0];
+    if(!row){save.acct=AC.uid; return acPush();}
+    var rts=Date.parse(row.updated_at)||0;
+    if(!acHasProgress()){acAdopt(row); acMsg('Progresso da nuvem carregado.'); acRender(); return;}
+    if(save.acct===AC.uid){
+      if(rts>(save.ts||0)+1500){acAdopt(row); acMsg('Progresso atualizado a partir de outro aparelho.'); acRender();}
+      else return acPush();
+      return;
+    }
+    acRemote=row; acMsg(''); acRender();   /* primeiro vínculo com progresso diferente nos dois lados: o jogador decide */
+  }).catch(function(){acMsg('Sem conexão com a nuvem. Tente de novo mais tarde.');});
+}
+function acMsg(t){var m=$('acMsg'); if(m) m.textContent=t||'';}
+function acHomeBtn(){var b=$('acctBtn'); b.textContent=AC.uid?('☁ '+(AC.name||AC.email||'Conta')):'☁ Entrar / Criar conta'; b.classList.toggle('on',!!AC.uid);}
+function acRender(){
+  acHomeBtn();
+  var ok=rkOn(), lead=$('acLead');
+  $('acMe').hidden=!AC.uid; $('acConflict').hidden=!acRemote;
+  $('acLogin').hidden=!!AC.uid||!ok||(IN_FRAME&&!IN_APK); $('acForm').hidden=!!AC.uid||!ok; $('acSync').hidden=!AC.uid; $('acOut').hidden=!AC.uid;
+  if(!ok) lead.textContent='O login ainda não foi ativado neste jogo.';
+  else if(AC.uid) lead.textContent='Você está conectado. Dinheiro, melhorias, visuais, recorde e apelido seguem com você em qualquer aparelho: celular, computador, PWA ou app.';
+  else lead.textContent='Crie uma conta (ou entre) para levar seu progresso (dinheiro, melhorias, visuais, recorde e apelido) para qualquer aparelho.'+((IN_FRAME&&!IN_APK)?' O login com Google só funciona fora desta pré-visualização.':'');
+  var me=$('acMe'); me.textContent='';
+  if(AC.uid){var l=document.createElement('span'); l.appendChild(document.createTextNode('Conta: ')); var b=document.createElement('b'); b.textContent=AC.email||AC.name||'Conta'; l.appendChild(b); me.appendChild(l);}
+}
+function acAuthUrl(){
+  var back=IN_APK?'rocketcar://auth':(location.origin+location.pathname);
+  return acUrl('/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(back));
+}
+function acHandleHash(h){
+  h=String(h||'').replace(/^#/,''); if(!h) return false;
+  var q={}; h.split('&').forEach(function(kv){var i=kv.indexOf('='); if(i>0) q[decodeURIComponent(kv.slice(0,i))]=decodeURIComponent(kv.slice(i+1).replace(/\+/g,' '));});
+  if(q.error_description||q.error){acMsg('Não foi possível entrar: '+(q.error_description||q.error)); showSheet('accountSheet'); return true;}
+  if(!q.access_token||!q.refresh_token) return false;
+  AC.at=q.access_token; AC.rt=q.refresh_token; AC.exp=Date.now()+(Number(q.expires_in)||3600)*1000;
+  showSheet('accountSheet'); acMsg('Entrando…');
+  fetch(acUrl('/auth/v1/user'),{headers:{apikey:RANK.key,Authorization:'Bearer '+AC.at}}).then(function(r){if(!r.ok) throw new Error('user'); return r.json();}).then(function(u){
+    AC.uid=u.id; AC.email=u.email||''; AC.name=String((u.user_metadata&&(u.user_metadata.full_name||u.user_metadata.name))||String(u.email||'').split('@')[0]||'').split(' ')[0].slice(0,14); acStore(); acRender();
+    if(q.type==='recovery'){$('acRec').hidden=false; acMsg('Defina sua nova senha abaixo.');}
+    return acSync();
+  }).catch(function(){acClear(); acRender(); acMsg('Não foi possível concluir o login. Tente de novo.');});
+  return true;
+}
+
+/* login com email e senha (Supabase Auth) */
+function acErr(j){
+  var m=String((j&&(j.msg||j.error_description||j.message||j.error))||'').toLowerCase();
+  if(m.indexOf('invalid login')>=0) return 'Email ou senha incorretos.';
+  if(m.indexOf('already')>=0) return 'Esse email já tem conta. Toque em Entrar.';
+  if(m.indexOf('at least')>=0||m.indexOf('weak')>=0) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if(m.indexOf('not confirmed')>=0) return 'Confirme seu email (veja a caixa de entrada) antes de entrar.';
+  if(m.indexOf('rate limit')>=0||m.indexOf('too many')>=0) return 'Muitas tentativas. Aguarde um pouco e tente de novo.';
+  if(m.indexOf('valid email')>=0||m.indexOf('invalid email')>=0) return 'Digite um email válido.';
+  return 'Não foi possível concluir. Tente de novo.';
+}
+function acSession(j){
+  var u=j.user||{}; AC.at=j.access_token; AC.rt=j.refresh_token; AC.exp=Date.now()+(Number(j.expires_in)||3600)*1000;
+  AC.uid=u.id; AC.email=u.email||''; AC.name=String(AC.email.split('@')[0]).slice(0,14); acStore();
+}
+function acEmailAuth(mode){
+  if(!rkOn()) return;
+  var em=$('acEmail').value.trim().toLowerCase(), pw=$('acPass').value;
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){acMsg('Digite um email válido.'); return;}
+  if(pw.length<6){acMsg('A senha precisa ter pelo menos 6 caracteres.'); return;}
+  acMsg(mode==='up'?'Criando conta…':'Entrando…');
+  fetch(acUrl(mode==='up'?'/auth/v1/signup':'/auth/v1/token?grant_type=password'),{method:'POST',headers:{apikey:RANK.key,'Content-Type':'application/json'},body:JSON.stringify({email:em,password:pw})})
+  .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+  .then(function(x){
+    if(!x.ok) throw {msg:acErr(x.j)};
+    if(!x.j.access_token){acMsg('Conta criada! Enviamos um email de confirmação: confirme e depois toque em Entrar.'); return;}
+    acSession(x.j); $('acPass').value=''; acRender(); sfx('pickup'); return acSync();
+  }).catch(function(e){acMsg(e&&e.msg?e.msg:'Sem conexão. Tente de novo.');});
+}
+$('acForm').addEventListener('submit',function(e){e.preventDefault(); acEmailAuth('in');});
+$('acUp').addEventListener('click',function(){this.blur(); acEmailAuth('up');});
+$('acForgot').addEventListener('click',function(){
+  this.blur(); var em=$('acEmail').value.trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){acMsg('Digite seu email no campo acima e toque em "Esqueci a senha".'); return;}
+  fetch(acUrl('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname)),{method:'POST',headers:{apikey:RANK.key,'Content-Type':'application/json'},body:JSON.stringify({email:em})})
+  .then(function(r){acMsg(r.ok?'Se esse email tem conta, enviamos um link para criar uma nova senha. Abra o link no navegador.':'Não foi possível enviar agora. Tente mais tarde.');},function(){acMsg('Sem conexão. Tente de novo.');});
+});
+$('acRec').addEventListener('submit',function(e){
+  e.preventDefault(); var pw=$('acNew').value; if(pw.length<6){acMsg('A senha precisa ter pelo menos 6 caracteres.'); return;}
+  acToken().then(function(t){return fetch(acUrl('/auth/v1/user'),{method:'PUT',headers:{apikey:RANK.key,Authorization:'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({password:pw})});})
+  .then(function(r){ if(!r.ok) throw new Error('x'); $('acNew').value=''; $('acRec').hidden=true; acMsg('Senha alterada com sucesso.'); sfx('pickup'); },function(){acMsg('Não foi possível alterar a senha. Peça um novo link.');});
+});
+['acEmail','acPass','acNew'].forEach(function(id){$(id).addEventListener('keydown',function(e){e.stopPropagation(); if(e.key==='Escape'){this.blur(); showSheet('homeSheet');}});});
+window.__authReturn=function(frag){acHandleHash(frag);};
+acLoad();
+$('acctBtn').addEventListener('click',function(){this.blur(); showSheet('accountSheet');});
+$('acBack').addEventListener('click',function(){this.blur(); showSheet('homeSheet');});
+$('acLogin').addEventListener('click',function(){this.blur(); if(!rkOn()) return; acMsg('Abrindo o login do Google…'); window.location.href=acAuthUrl();});
+$('acSync').addEventListener('click',function(){this.blur(); acSync();});
+$('acOut').addEventListener('click',function(){
+  this.blur(); var t=AC.at; try{fetch(acUrl('/auth/v1/logout'),{method:'POST',headers:{apikey:RANK.key,Authorization:'Bearer '+t}});}catch(e){}
+  acClear(); persistNoSync(); acRender(); acMsg('Você saiu da conta. O progresso continua salvo neste aparelho.');
+});
+function persistNoSync(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}}
+$('acCloud').addEventListener('click',function(){this.blur(); if(!acRemote) return; var row=acRemote; acRemote=null; acAdopt(row); acMsg('Progresso da nuvem carregado.'); acRender();});
+$('acLocal').addEventListener('click',function(){this.blur(); acRemote=null; save.acct=AC.uid; acRender(); acPush().catch(function(){acMsg('Sem conexão: será enviado depois.');});});
+window.addEventListener('online',function(){if(AC.uid&&acDirty) acQueue();});
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&AC.uid&&save.acct===AC.uid&&!acDirty&&state==='menu') acSync();});
+acHomeBtn();
+(function(){
+  var h=location.hash; if(h&&(h.indexOf('access_token=')>=0||h.indexOf('error_description=')>=0)){
+    try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+    setTimeout(function(){acHandleHash(h);},50);
+  }else if(AC.uid&&rkOn()) setTimeout(acSync,800);
+})();
 $('goHow').addEventListener('click',function(){this.blur(); showSheet('howSheet');});
 $('goConsole').addEventListener('click',function(){this.blur(); showSheet('consoleSheet');});
 $('howBack').addEventListener('click',function(){this.blur(); showSheet('homeSheet');});

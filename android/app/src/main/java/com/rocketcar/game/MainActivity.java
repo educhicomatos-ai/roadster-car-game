@@ -1,7 +1,9 @@
 package com.rocketcar.game;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
@@ -15,6 +17,7 @@ public class MainActivity extends Activity {
     private static final String GAME_URL = "https://educhicomatos-ai.github.io/roadster-car-game/";
     private WebView web;
     private boolean fallback = false;
+    private String pendingAuth = null;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -31,6 +34,22 @@ public class MainActivity extends Activity {
         s.setLoadWithOverviewMode(true);
         web.setWebViewClient(new WebViewClient() {
             @Override
+            public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
+                // O Google bloqueia login dentro de WebView: abre o navegador do sistema.
+                String u = r.getUrl().toString();
+                if (u.contains("/auth/v1/authorize")) {
+                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u))); } catch (Exception e) { }
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public void onPageFinished(WebView v, String url) {
+                deliverAuth();
+            }
+
+            @Override
             public void onReceivedError(WebView v, WebResourceRequest r, WebResourceError e) {
                 // Sem internet na primeira abertura: usa a cópia embutida no app.
                 if (r.isForMainFrame() && !fallback) {
@@ -41,7 +60,32 @@ public class MainActivity extends Activity {
         });
         // Abre a versão mais recente publicada no GitHub Pages; o service worker do jogo guarda cópia para uso offline.
         web.loadUrl(GAME_URL);
+        handleAuthIntent(getIntent());
         hideBars();
+    }
+
+    // Retorno do login: rocketcar://auth#access_token=...&refresh_token=...
+    private void handleAuthIntent(Intent i) {
+        if (i == null || i.getData() == null) return;
+        Uri d = i.getData();
+        if (!"rocketcar".equals(d.getScheme())) return;
+        String frag = d.getEncodedFragment();
+        if (frag == null || frag.isEmpty()) frag = d.getEncodedQuery();
+        if (frag != null && !frag.isEmpty()) { pendingAuth = frag; deliverAuth(); }
+    }
+
+    private void deliverAuth() {
+        if (pendingAuth == null || web == null) return;
+        String js = "window.__authReturn && window.__authReturn(" + org.json.JSONObject.quote(pendingAuth) + ")";
+        pendingAuth = null;
+        web.evaluateJavascript(js, null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent i) {
+        super.onNewIntent(i);
+        setIntent(i);
+        handleAuthIntent(i);
     }
 
     private void hideBars() {
