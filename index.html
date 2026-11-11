@@ -1015,7 +1015,7 @@ shadow.rotation.x=-Math.PI/2; shadow.scale.set(1.3,2.6,1); scene.add(shadow);
 var shieldMesh=new THREE.Mesh(new THREE.SphereGeometry(2.9,20,14),new THREE.MeshBasicMaterial({color:0xffc24a,transparent:true,opacity:0.16,depthWrite:false}));
 shieldMesh.position.y=0.8; shieldMesh.visible=false; shieldMesh.castShadow=false; player.add(shieldMesh);
 
-var c={x:0,y:0,z:0,vy:0,speed:34,psi:0,grounded:true,slopeVy:0,pitch:0,rolling:false,rollAng:0,air:TANK,dist:0,shield:0,mult:0,nitro:0,turbo:0,slow:0,zap:0,slip:0};
+var c={x:0,y:0,z:0,vy:0,speed:34,psi:0,grounded:true,slopeVy:0,pitch:0,rolling:false,rollAng:0,air:TANK,dist:0,shield:0,mult:0,nitro:0,turbo:0,slow:0,zap:0,slip:0,goo:0,gv:0,gvT:0,fire:0};
 var state='menu', score=0, timeLeft=RUN_TIME, shake=0, demoT=0;
 /* difficulty grows with the score of the run: dif() 0.55 (start) to 1.3 (score 5000+) */
 function diffT(){return clamp(score/3500,0,1);}
@@ -3007,7 +3007,7 @@ applyUpgrades(); applyLook();
 c.air=TANK;
 
 /* ---------- DEV: choose the next random event ---------- */
-var DEV_EVENTS=[['meteors','Chuva de meteoros'],['bomber','Caminhão bombardeiro'],['boss','Drone de entregas'],['hero','Super-herói'],['monkey','Macaco faminto'],['dino','Corrida jurássica'],['jet','Caça bombardeiro'],['octo','Doutor Tentáculo']];
+var DEV_EVENTS=[['meteors','Chuva de meteoros'],['bomber','Caminhão bombardeiro'],['boss','Drone de entregas'],['hero','Super-herói'],['monkey','Macaco faminto'],['dino','Corrida jurássica'],['jet','Caça bombardeiro'],['octo','Doutor Tentáculo'],['slime','Monstro de gosma'],['fire','Carro flamejante']];
 var devNext=null, devPaused=false;
 function devName(k){for(var i=0;i<DEV_EVENTS.length;i++) if(DEV_EVENTS[i][0]===k) return DEV_EVENTS[i][1]; return 'Aleatório';}
 function renderDevLists(){
@@ -4061,7 +4061,7 @@ $('endMenu').addEventListener('click',function(){this.blur(); state='menu'; show
 /* ---------- game flow ---------- */
 function resetRun(){
   clearWorld();
-  c.x=0;c.y=0;c.z=0;c.vy=0;c.speed=34;c.psi=0;c.grounded=true;c.slopeVy=0;c.pitch=0;c.rolling=false;c.rollAng=0;c.air=TANK;c.dist=0;c.shield=0;c.mult=0;c.nitro=0;c.turbo=0;c.slow=0;c.zap=0;c.slip=0;
+  c.x=0;c.y=0;c.z=0;c.vy=0;c.speed=34;c.psi=0;c.grounded=true;c.slopeVy=0;c.pitch=0;c.rolling=false;c.rollAng=0;c.air=TANK;c.dist=0;c.shield=0;c.mult=0;c.nitro=0;c.turbo=0;c.slow=0;c.zap=0;c.slip=0;c.goo=0;c.gv=0;c.fire=0;
   dmo.ang=0; dmo.air=0; score=0; timeLeft=RUN_TIME+up.clock*5; spawnZ=-120; shake=0;
   fx.dmg=0; fx.kick=0; fx.hit=0; fx.prevTL=timeLeft; fx.jp=fx.jpv=fx.jr=fx.jrv=0; if(player.userData.paint) player.userData.paint.emissive.setHex(0);
   envReset();
@@ -4122,7 +4122,7 @@ function land(gh){
 }
 
 /* ---------- random events: meteors, rockets in the sky, delivery drone boss ---------- */
-var ev={kind:null,next:12,t:0,dur:0,sp:0,lastBoss:-99,lastBomber:-99,lastHero:-99,lastMonkey:-99,lastDino:-99,lastJet:-99,lastOcto:-99,prev:''}, bomber=null, hero=null, falls=[], rockets=[], boss=null, rocketNext=3, elapsed=0, bossHits=0;
+var ev={kind:null,next:12,t:0,dur:0,sp:0,lastBoss:-99,lastBomber:-99,lastHero:-99,lastMonkey:-99,lastDino:-99,lastJet:-99,lastOcto:-99,lastSlime:-99,lastFire:-99,prev:''}, bomber=null, hero=null, falls=[], rockets=[], boss=null, rocketNext=3, elapsed=0, bossHits=0;
 var elEvBar=$('evbar'), elEvName=$('evname'), elEvFill=$('evfill');
 var warnGeo=new THREE.RingGeometry(0.82,1,32), meteorGeo=new THREE.IcosahedronGeometry(1.7,0), tailGeo=new THREE.ConeGeometry(1.3,13,8);
 var evMats={
@@ -4839,6 +4839,328 @@ function updateOctoVillain(dt,playing){
   }
 }
 
+/* ---------- evento: monstro de gosma ---------- */
+var slimeV=null, gooBalls=[], gooPuds=[], gooStuck=[];
+var gooMat=new THREE.MeshPhongMaterial({color:0x4ccf2e,emissive:0x1c7a10,specular:0xeaffdc,shininess:90,transparent:true,opacity:0.93,side:THREE.DoubleSide});
+var gooCore=new THREE.MeshPhongMaterial({color:0x9bf56a,emissive:0x3da81c,transparent:true,opacity:0.5,depthWrite:false,side:THREE.DoubleSide});
+var gooCoatMat=new THREE.MeshPhongMaterial({color:0x58dc30,emissive:0x1f8a12,specular:0xffffff,shininess:90,transparent:true,opacity:0.66,depthWrite:false});
+var gooDark=new THREE.MeshBasicMaterial({color:0x14540f}), gooEye=new THREE.MeshBasicMaterial({color:0xfff6c0});
+var gooHalo=new THREE.MeshBasicMaterial({color:0xfff3a0,transparent:true,opacity:0.32,depthWrite:false});
+var gooPudMat=new THREE.MeshPhongMaterial({color:0x56d62f,emissive:0x1f7d10,specular:0xffffff,shininess:80,transparent:true,opacity:0.82,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3,depthWrite:false});
+evMats.warn3=new THREE.MeshBasicMaterial({color:0x5dff3a,transparent:true,opacity:0.7,depthWrite:false,side:THREE.DoubleSide});
+var gooSphere=new THREE.SphereGeometry(1,14,10);
+var SLIME_PROF=[[1.35,0],[1.3,0.1],[1.12,0.26],[0.92,0.55],[0.7,0.9],[0.42,1.2],[0.16,1.38],[0.0,1.44]];
+function slimeR(y){
+  for(var i=1;i<SLIME_PROF.length;i++){var a=SLIME_PROF[i-1], b=SLIME_PROF[i]; if(y<=b[1]) return a[0]+(b[0]-a[0])*(y-a[1])/(b[1]-a[1]);}
+  return 0;
+}
+var slimeGeo=(function(){
+  var g=new THREE.LatheGeometry(SLIME_PROF.map(function(p){return new THREE.Vector2(p[0],p[1]);}),28), pa=g.attributes.position;
+  for(var i=0;i<pa.count;i++){var y=pa.getY(i); pa.setX(i,pa.getX(i)-0.22*y*y);}
+  g.computeVertexNormals(); return g;
+})();
+function makeSlime(){
+  var g=new THREE.Group(), b=new THREE.Group(); g.add(b);
+  b.add(new THREE.Mesh(slimeGeo,gooMat));
+  var core=new THREE.Mesh(slimeGeo,gooCore); core.scale.set(0.8,0.82,0.8); core.position.y=0.04; b.add(core);
+  var tip=new THREE.Mesh(new THREE.ConeGeometry(0.1,0.34,8),gooMat); tip.position.set(-0.47,1.55,0); tip.rotation.z=0.25; b.add(tip);
+  function surf(y,a){var r=slimeR(y); return [r*Math.sin(a)-0.22*y*y, y, r*Math.cos(a)];}
+  [[-0.06,0.92],[0.36,0.9]].forEach(function(e){
+    var r=slimeR(e[1]), z=Math.sqrt(Math.max(0.01,r*r-Math.pow(e[0]+0.22*e[1]*e[1],2)))+0.03;
+    var ey=new THREE.Mesh(gooSphere,gooEye); ey.scale.setScalar(0.15); ey.position.set(e[0],e[1],z); b.add(ey);
+    var h=new THREE.Mesh(gooSphere,gooHalo); h.scale.setScalar(0.25); h.position.set(e[0],e[1],z-0.03); b.add(h);
+  });
+  var mo=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.018,6,16,Math.PI),gooDark); mo.rotation.z=Math.PI; mo.position.set(0.16,0.7,slimeR(0.7)*0.97+0.02); b.add(mo);
+  [[0.55,0.5,0.22],[0.3,0.9,0.3],[-0.5,0.7,0.26],[0.95,0.36,0.2],[1.2,0.5,0.17]].forEach(function(d){
+    var p=surf(d[1],d[0]), dr=new THREE.Mesh(gooSphere,gooMat); dr.scale.set(0.07,d[2],0.07); dr.position.set(p[0]*1.02,p[1]-d[2]*0.4,p[2]*1.02); b.add(dr);
+  });
+  for(var i=0;i<6;i++){var a=i/6*TAU+0.3, lb=new THREE.Mesh(gooSphere,gooMat); lb.scale.set(0.5,0.24,0.5); lb.position.set(Math.sin(a)*1.25,0.13,Math.cos(a)*1.25); b.add(lb);}
+  var dp=new THREE.Mesh(gooSphere,gooMat); dp.scale.set(0.3,0.03,0.17); dp.position.set(-1.95,0.03,0.9); g.add(dp);
+  g.userData.body=b; g.scale.setScalar(7);
+  return g;
+}
+function startSlime(){
+  evJoin('slime'); ev.lastSlime=elapsed; bossHits=0;
+  var m=makeSlime(); scene.add(m);
+  slimeV={m:m,t:0,dur:27,rz:-190,cd:2.4,sq:0,vx:clamp(c.x*0.5,-12,12),tx:0,swT:0,carCd:3.4,cars:[]};
+  m.position.set(slimeV.vx,0,c.z+slimeV.rz); m.scale.setScalar(0.01);
+  eventIntro('Monstro de gosma','Gosma na pista: você perde a aderência!'); sfx('roar');
+}
+function gooCoat(o){
+  var hw=o.hw-0.95, s=new THREE.Mesh(gooSphere,gooCoatMat); s.scale.set(hw*1.12,0.95,o.L/2*1.06); s.position.y=0.9; o.m.add(s); o.gooShell=s;
+  [[-0.9,1.0],[0.8,0.2],[0.5,-1.0]].forEach(function(d){
+    var dr=new THREE.Mesh(gooSphere,gooMat); dr.scale.set(0.09,0.3,0.09); dr.position.set(hw*d[0],0.7,o.L/2*0.6*d[1]); o.m.add(dr);
+  });
+}
+function addPuddle(x,z,r,life){
+  if(gooPuds.length>=14){var q=gooPuds.shift(); scene.remove(q.m);}
+  var g=new THREE.Group(), y=groundH(x,z)+0.05;
+  var m=new THREE.Mesh(gooSphere,gooPudMat); m.scale.set(r,0.04,r*rand(0.8,1.05)); g.add(m);
+  for(var i=0;i<3;i++){var s=new THREE.Mesh(gooSphere,gooPudMat); var a=rand(0,TAU); s.scale.set(r*0.3,0.03,r*0.26); s.position.set(Math.sin(a)*r*0.95,0,Math.cos(a)*r*0.95); g.add(s);}
+  g.position.set(x,y,z); g.rotation.y=rand(0,TAU); scene.add(g);
+  gooPuds.push({m:g,x:x,z:z,r:r,life:life,max:life,hit:false});
+}
+function applyGoo(d,soft){
+  c.goo=Math.max(c.goo,d); c.gv=clamp(c.gv+(Math.random()<0.5?-1:1)*rand(8,12)*(soft?0.55:1),-16,16);
+  sfx('splat'); burst(c.x,1,c.z,12,0x6aff3a,9,1.1);
+  var n=soft?1:3;
+  for(var i=0;i<n&&gooStuck.length<5;i++){
+    var b=new THREE.Mesh(gooSphere,gooMat); b.scale.set(rand(0.25,0.45),0.12,rand(0.25,0.45)); b.position.set(rand(-0.8,0.8),rand(0.95,1.3),rand(-1.7,1.2)); player.add(b); gooStuck.push(b);
+  }
+}
+function throwGoo(sx,sy,sz,tx,tz){
+  var m=new THREE.Mesh(gooSphere,gooMat); m.scale.setScalar(1.1); m.position.set(sx,sy,sz); scene.add(m);
+  var r=new THREE.Mesh(warnGeo,evMats.warn3); r.rotation.x=-Math.PI/2; r.position.set(tx,0.07,tz); r.scale.setScalar(2.9); scene.add(r);
+  gooBalls.push({m:m,ring:r,t:0,T:1.35,sx:sx,sy:sy,sz:sz,tx:tx,tz:tz});
+}
+function updateGoo(dt,playing){
+  evMats.warn3.opacity=evMats.warn.opacity;
+  var i;
+  for(i=gooBalls.length-1;i>=0;i--){
+    var b=gooBalls[i]; b.t+=dt; var u=Math.min(1,b.t/b.T), gy=groundH(b.tx,b.tz);
+    b.m.position.set(b.sx+(b.tx-b.sx)*u, b.sy+(gy-b.sy)*u+9*Math.sin(Math.PI*u), b.sz+(b.tz-b.sz)*u);
+    var w=Math.sin(b.t*18)*0.12; b.m.scale.set(1.1-w,1.1+w*1.4,1.1-w);
+    if(u>=1){
+      scene.remove(b.m); scene.remove(b.ring);
+      burst(b.tx,0.6,b.tz,18,0x6aff3a,11,1.2); shock(b.tx,0.1,b.tz,0x7dff4a,5,0.5); sfx('ploc');
+      addPuddle(b.tx,b.tz,2.7,7);
+      var dx=c.x-b.tx, dz=c.z-b.tz;
+      if(playing && dx*dx+dz*dz<2.9*2.9 && c.y<2.4){ if(hurt('Gosma na pista',1.2,0.88)){bossHits++; applyGoo(3.5,false);} }
+      gooBalls.splice(i,1);
+    }
+  }
+  for(i=gooPuds.length-1;i>=0;i--){
+    var p=gooPuds[i]; p.life-=dt;
+    var k=clamp(p.life/1.2,0,1); p.m.scale.set(0.7+0.3*k,k,0.7+0.3*k);
+    if(playing && p.life>0.3 && c.y<1.3){
+      var ex=c.x-p.x, ez=c.z-p.z;
+      if(ex*ex+ez*ez<p.r*p.r*0.85){
+        c.goo=Math.max(c.goo,1.4);
+        if(!p.hit){p.hit=true; c.gv=clamp(c.gv+(Math.random()<0.5?-1:1)*rand(5,8),-16,16); sfx('ploc'); burst(c.x,0.6,c.z,8,0x6aff3a,7,1);}
+      }
+    }
+    if(p.life<=0 || p.z>c.z+40){scene.remove(p.m); gooPuds.splice(i,1);}
+  }
+  if(c.goo<=0 && gooStuck.length){
+    gooStuck.forEach(function(m){player.remove(m);}); gooStuck=[];
+    burst(c.x,1.1,c.z,12,0x6aff3a,8,1.1); if(playing) toast('Aderência recuperada','info');
+  }
+  gooStuck.forEach(function(m,k){m.scale.y=0.12+0.04*Math.sin(performance.now()*0.004+k);});
+}
+function updateSlime(dt,playing){
+  updateGoo(dt,playing);
+  if(!slimeV) return;
+  var v=slimeV; v.t+=dt; v.cd-=dt; v.carCd-=dt; v.sq*=Math.max(0,1-5*dt);
+  var T=v.dur, i, rzT=-82+Math.sin(v.t*0.6)*6;
+  if(v.t<2.6) rzT=-82-110*(1-ease(v.t/2.6));
+  v.rz+=(rzT-v.rz)*Math.min(1,5*dt);
+  v.swT-=dt; if(v.swT<=0){v.swT=rand(2,3.4); v.tx=clamp(c.x*0.6+rand(-10,10),-14,14);}
+  v.vx+=(v.tx-v.vx)*Math.min(1,1.3*dt);
+  var vz=c.z+v.rz, sc=7;
+  if(v.t<1.8){var e=ease(v.t/1.8); sc=7*(e+0.12*Math.sin(e*Math.PI));}
+  else if(v.t>T-2.2){sc=7*ease((T-v.t)/2.2);}
+  v.m.position.set(v.vx,groundH(v.vx,vz),vz); v.m.scale.setScalar(Math.max(0.01,sc));
+  var s=Math.sin(v.t*3), body=v.m.userData.body;
+  body.scale.set(1+0.04*s+v.sq*0.14,1-0.05*s-v.sq*0.2,1+0.04*s+v.sq*0.14); body.rotation.z=Math.sin(v.t*1.7)*0.035;
+  var mx=v.vx+0.4, my=4.6, mz=vz+5;
+  if(playing && v.t>2.6 && v.t<T-2.4 && v.cd<=0){
+    v.cd=rand(1.5,2.3)/Math.pow(dif(),0.6); v.sq=0.9; sfx('throw');
+    var k=1+(Math.random()<0.15+0.25*diffT()?1:0);
+    for(var q=0;q<k;q++){
+      var aimed=Math.random()<0.4, tx=aimed?clamp(c.x+rand(-3,3),-ROAD_HALF+1.5,ROAD_HALF-1.5):rand(-ROAD_HALF+1.5,ROAD_HALF-1.5);
+      throwGoo(mx,my,mz,tx,c.z-clamp(c.speed*1.35,50,125)-rand(0,25));
+    }
+  }
+  /* engole carros do trânsito e cospe de volta cobertos de gosma */
+  if(playing && v.t>3 && v.t<T-6 && v.carCd<=0 && v.cars.length<2){
+    var cand=null, bd=1e9;
+    cars.forEach(function(o){
+      if(o.dead||!o.m) return;
+      var dz=o.m.position.z-vz, dx=o.m.position.x-v.vx;
+      if(dz>-8 && dz<50 && Math.abs(dx)<24 && Math.abs(dz)<bd){bd=Math.abs(dz); cand=o;}
+    });
+    if(cand){cand.dead=true; cand.vel=null; v.cars.push({o:cand,s:'in',t:0,sx:cand.m.position.x,sy:cand.m.position.y,sz:cand.m.position.z}); v.carCd=rand(4.4,6.4)/Math.pow(dif(),0.5);}
+    else v.carCd=1;
+  }
+  for(i=v.cars.length-1;i>=0;i--){
+    var it=v.cars[i], o=it.o, m=o.m; it.t+=dt;
+    if(!m){v.cars.splice(i,1); continue;}
+    if(it.s==='in'){
+      var u=ease(it.t/0.8);
+      m.position.set(it.sx+(mx-it.sx)*u, it.sy+(my-it.sy)*u+Math.sin(Math.PI*u)*3, it.sz+(mz-it.sz)*u);
+      m.scale.setScalar(1-0.85*u); m.rotation.z+=dt*8; m.rotation.x+=dt*4;
+      if(it.t>=0.8){it.s='chew'; it.t=0; m.visible=false; v.sq=1; sfx('ploc'); burst(mx,my,mz,16,0x6aff3a,9,1.2);}
+    }else if(it.s==='chew'){
+      v.sq=0.45+0.45*Math.sin(it.t*14);
+      if(it.t>=1.0){
+        if(!playing){m.visible=true; m.scale.setScalar(1); resetCar(o,c.z-300); v.cars.splice(i,1); continue;}
+        m.visible=true; m.rotation.set(0,0,0); gooCoat(o); v.sq=1.2; sfx('throw'); burst(mx,my,mz,16,0x6aff3a,10,1.2);
+        it.s='out'; it.t=0; it.T=1.6; it.sx=mx; it.sy=my; it.sz=mz;
+        it.tx=clamp(c.x+rand(-2.5,2.5),-ROAD_HALF+2,ROAD_HALF-2); it.tz=c.z-c.speed*it.T-2;
+        var r=new THREE.Mesh(warnGeo,evMats.warn3); r.rotation.x=-Math.PI/2; r.position.set(it.tx,0.07,it.tz); r.scale.setScalar(3.4); scene.add(r); it.ring=r;
+      }
+    }else{
+      var uu=Math.min(1,it.t/it.T);
+      m.position.set(it.sx+(it.tx-it.sx)*uu, it.sy+(0.2-it.sy)*uu+8*Math.sin(Math.PI*uu), it.sz+(it.tz-it.sz)*uu);
+      m.scale.setScalar(Math.min(1,0.15+uu*4)); m.rotation.x-=dt*3; m.rotation.z+=dt*2.2;
+      if(Math.random()<0.5) burst(m.position.x,m.position.y,m.position.z,1,0x6aff3a,3,0.8);
+      if(uu>=1){
+        scene.remove(it.ring); m.rotation.set(0,rand(-0.3,0.3),0); m.position.set(it.tx,0,it.tz);
+        burst(it.tx,0.6,it.tz,22,0x6aff3a,13,1.3); shock(it.tx,0.1,it.tz,0x7dff4a,7,0.55); sfx('crash'); shake=Math.max(shake,0.4);
+        addPuddle(it.tx,it.tz,3.4,8);
+        var ddx=c.x-it.tx, ddz=c.z-it.tz;
+        if(playing && Math.abs(ddz)<o.hl+0.8 && Math.abs(ddx)<o.hw+0.6 && c.y<o.clear){
+          if(hurt('Carro cuspido pela gosma',3,0.6)){bossHits++; applyGoo(4,false);}
+        }
+        o.vel=new THREE.Vector3(rand(-3,3),rand(4,6),-rand(10,20)); o.sp=rand(-4,4);
+        v.cars.splice(i,1);
+      }
+    }
+  }
+  if(v.t>=T){
+    addPuddle(v.vx,vz,4.4,9); burst(v.vx,1.5,vz,30,0x6aff3a,14,1.5);
+    v.cars.forEach(function(it){if(it.ring) scene.remove(it.ring); if(it.o.m){it.o.m.visible=true; it.o.m.scale.setScalar(1);} resetCar(it.o,c.z-300);});
+    scene.remove(v.m); slimeV=null;
+    finishMajor(playing,'Nenhuma gosma te pegou','O monstro de gosma derreteu');
+  }
+}
+
+/* ---------- evento: carro flamejante ---------- */
+var fireV=null, firePats=[], fireCd=0, fireFl=null;
+var fMatO=new THREE.MeshBasicMaterial({color:0xff6a14,transparent:true,opacity:0.88,depthWrite:false,blending:THREE.AdditiveBlending});
+var fMatY=new THREE.MeshBasicMaterial({color:0xffd04a,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending});
+var fMatG=new THREE.MeshBasicMaterial({color:0xff5a0a,transparent:true,opacity:0.5,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
+var fMatS=new THREE.MeshBasicMaterial({color:0x14100e,transparent:true,opacity:0.55,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+var fConeGeo=new THREE.ConeGeometry(1,1,7), fDisc=new THREE.CircleGeometry(1,20);
+var smokes=[], smokeI=0;
+(function(){
+  var g=new THREE.SphereGeometry(1,7,6);
+  for(var i=0;i<48;i++){
+    var m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0x1a1614,transparent:true,opacity:0,depthWrite:false})); m.visible=false; scene.add(m);
+    smokes.push({m:m,t:0,T:1,on:false,vy:3,vx:0,s:1});
+  }
+})();
+function smokePuff(x,y,z,big){
+  var q=smokes[smokeI]; smokeI=(smokeI+1)%smokes.length;
+  q.on=true; q.t=0; q.T=rand(1.4,2.2); q.s=big?1.5:0.85; q.vy=rand(3,5); q.vx=rand(-0.6,0.6); q.m.position.set(x,y,z); q.m.visible=true;
+}
+function updateSmokes(dt){
+  smokes.forEach(function(q){
+    if(!q.on) return;
+    q.t+=dt; var u=q.t/q.T;
+    if(u>=1){q.on=false; q.m.visible=false; return;}
+    q.m.position.y+=q.vy*dt; q.m.position.x+=q.vx*dt; q.m.scale.setScalar(q.s*(1+u*2.8)); q.m.material.opacity=0.5*(1-u);
+  });
+}
+function mkFlame(parent,x,y,z,rx,h,mat,ph){
+  var m=new THREE.Mesh(fConeGeo,mat); m.position.set(x,y+h/2,z); m.scale.set(rx,h,rx); parent.add(m);
+  return {m:m,h:h,y:y,rx:rx,ph:ph||rand(0,6)};
+}
+function flick(f,t,k){
+  var s=(0.75+0.35*Math.sin(t*21+f.ph)+0.15*Math.sin(t*37+f.ph*2))*k;
+  f.m.scale.set(f.rx*(0.9+0.15*Math.sin(t*13+f.ph)),Math.max(0.01,f.h*s),f.rx*(0.9+0.15*Math.cos(t*11+f.ph)));
+  f.m.position.y=f.y+f.h*s/2;
+}
+function makeFireCar(){
+  var g=new THREE.Group(), body=lamb(0x15171e,{emissive:0x2a0c04}), trim=lamb(0x2a2d38), glass=lamb(0x1a0d0a,{emissive:0x401206}), glow=new THREE.MeshBasicMaterial({color:0xff5a1a}), blk=lamb(0x07080b), red=new THREE.MeshBasicMaterial({color:0xff2a1a});
+  addBox(g,2.3,0.7,5.0,0,0.75,0,body); addBox(g,2.1,0.35,2.1,0,1.2,-1.35,body); addBox(g,0.7,0.14,0.9,0,1.42,-1.45,trim);
+  addBox(g,1.85,0.62,1.9,0,1.28,0.6,glass); addBox(g,1.7,0.1,1.5,0,1.62,0.65,body); addBox(g,2.4,0.14,0.5,0,1.38,2.35,trim);
+  addBox(g,1.9,0.28,0.1,0,0.82,-2.52,blk); addBox(g,0.4,0.22,0.1,-0.75,0.95,-2.54,glow); addBox(g,0.4,0.22,0.1,0.75,0.95,-2.54,glow);
+  addBox(g,2.0,0.08,4.6,0,0.38,0,glow); addBox(g,0.5,0.2,0.1,-0.8,0.95,2.52,red); addBox(g,0.5,0.2,0.1,0.8,0.95,2.52,red);
+  [-1.6,1.6].forEach(function(z){addWheel(g,-1.18,0.42,z,0.45,0.3); addWheel(g,1.18,0.42,z,0.45,0.3);});
+  var fl=[];
+  [[0,1.5,-1.4,0.55,1.8],[-0.9,1.0,0.2,0.45,1.6],[0.9,1.0,0.2,0.45,1.6],[0,1.7,0.6,0.6,2.3],[-1.0,0.8,-1.6,0.4,1.4],[1.0,0.8,-1.6,0.4,1.4],[-0.8,1.2,1.5,0.45,1.8],[0.8,1.2,1.5,0.45,1.8],[0,1.2,2.1,0.55,2.0]].forEach(function(d){
+    fl.push(mkFlame(g,d[0],d[1],d[2],d[3],d[4],fMatO)); fl.push(mkFlame(g,d[0],d[1],d[2],d[3]*0.55,d[4]*0.65,fMatY));
+  });
+  [-0.7,0,0.7].forEach(function(x,i){
+    var m=new THREE.Mesh(fConeGeo,i===1?fMatY:fMatO); m.rotation.x=Math.PI/2; m.scale.set(0.55,4.2,0.55); m.position.set(x,1.0,2.6+2.1); g.add(m);
+    fl.push({m:m,h:4.2,y:0,rx:0.55,ph:rand(0,6),trail:true,x:x});
+  });
+  g.userData.fl=fl; g.scale.setScalar(1.2);
+  return g;
+}
+function animFireCar(m,t){
+  m.userData.fl.forEach(function(f){
+    if(f.trail){var s=0.8+0.3*Math.sin(t*19+f.ph); f.m.scale.set(f.rx*(0.9+0.15*Math.sin(t*13+f.ph)),f.h*s,f.rx); f.m.position.z=2.6+f.h*s/2; return;}
+    flick(f,t,1);
+  });
+}
+function addFirePatch(x,z){
+  if(firePats.length>=42){var o=firePats.shift(); scene.remove(o.g);}
+  var g=new THREE.Group(); g.position.set(x,groundH(x,z),z);
+  var sc=new THREE.Mesh(fDisc,fMatS); sc.rotation.x=-Math.PI/2; sc.position.y=0.04; sc.scale.set(2.3,3.0,1); g.add(sc);
+  var gl=new THREE.Mesh(fDisc,fMatG); gl.rotation.x=-Math.PI/2; gl.position.y=0.07; gl.scale.set(2.0,2.8,1); g.add(gl);
+  var fl=[];
+  for(var i=0;i<3;i++) fl.push(mkFlame(g,rand(-1.1,1.1),0.05,rand(-1.3,1.3),rand(0.8,1.2),rand(3.0,5.0),i%2?fMatY:fMatO));
+  scene.add(g);
+  firePats.push({g:g,x:x,z:z,life:rand(5.5,6.5),sc:sc,gl:gl,fl:fl,sm:rand(0,0.3)});
+}
+function startFire(){
+  evJoin('fire'); ev.lastFire=elapsed; bossHits=0;
+  var m=makeFireCar(); scene.add(m);
+  fireV={m:m,t:0,dur:25,rz:-300,x:clamp(c.x,-12,12),lx:0,tx:0,swT:0,sm:0,sp:0,lastZ:c.z-300};
+  fireV.lx=fireV.x; m.position.set(fireV.x,0,c.z+fireV.rz);
+  eventIntro('Carro flamejante','Desvie das trilhas de fogo!'); sfx('screech'); sfx('whoosh');
+}
+function updateFire(dt,playing){
+  updateSmokes(dt); fireCd=Math.max(0,fireCd-dt);
+  var i;
+  if(fireV){
+    var v=fireV; v.t+=dt; var T=v.dur;
+    var rzT=-92+Math.sin(v.t*0.7)*10;
+    if(v.t<3) rzT=-92-208*(1-ease(v.t/3));
+    else if(v.t>T-3) rzT=-92-400*ease((v.t-(T-3))/3);
+    v.rz+=(rzT-v.rz)*Math.min(1,5*dt);
+    v.swT-=dt;
+    if(v.swT<=0){v.swT=rand(0.9,1.8)/Math.pow(dif(),0.3); v.tx=(Math.random()<0.45+0.25*diffT())?clamp(c.x+rand(-3,3),-ROAD_HALF+3,ROAD_HALF-3):rand(-ROAD_HALF+3,ROAD_HALF-3);}
+    var ox=v.x; v.x+=clamp(v.tx-v.x,-15*dt,15*dt);
+    var zz=c.z+v.rz;
+    v.m.position.set(v.x,groundH(v.x,zz),zz); v.m.rotation.y=-clamp((v.x-ox)/Math.max(dt,0.001)/20,-1,1)*0.3;
+    animFireCar(v.m,v.t);
+    if(zz>v.lastZ){v.lastZ=zz; v.lx=v.x;}
+    else if(playing && v.t>1.6 && v.t<T-2.5){
+      var n=Math.min(6,Math.floor((v.lastZ-zz)/4.6));
+      for(var k=1;k<=n;k++){var f=k/n; addFirePatch(v.lx+(v.x-v.lx)*f,v.lastZ-4.6*k);}
+      if(n>0){v.lastZ-=4.6*n; v.lx=v.x;}
+    }else v.lastZ=zz;
+    v.sm-=dt; if(v.sm<=0){v.sm=0.07; smokePuff(v.x+rand(-0.8,0.8),1.4,zz+4.5,true); burst(v.x,1.3,zz+4,3,0xff8a2a,7,0.9);}
+    if(v.t>=T){scene.remove(v.m); fireV=null; finishMajor(playing,'Nenhuma queimadura','O carro flamejante sumiu');}
+  }
+  for(i=firePats.length-1;i>=0;i--){
+    var p=firePats[i]; p.life-=dt;
+    var kk=clamp(p.life/1.4,0,1), tt=performance.now()*0.001;
+    p.fl.forEach(function(f){flick(f,tt,kk);});
+    p.gl.scale.set(2.0*(0.6+0.4*kk)*(0.95+0.1*Math.sin(tt*15+p.x)),2.8*(0.6+0.4*kk),1);
+    p.sc.scale.set(2.3,3.0,1); p.sc.scale.multiplyScalar(0.7+0.3*clamp(p.life/2.5,0,1));
+    p.sm-=dt; if(p.sm<=0 && p.life>0.8 && Math.abs(p.z-c.z)<170){p.sm=rand(0.22,0.4); smokePuff(p.x+rand(-0.8,0.8),1.4,p.z+rand(-1,1),false);}
+    if(p.life>0.8){
+      if(playing && fireCd<=0 && c.y<1.7 && Math.abs(c.z-p.z)<2.7 && Math.abs(c.x-p.x)<2.0){
+        fireCd=1.4;
+        if(hurt('Queimado pelo fogo',2.5,0.7)){bossHits++; c.fire=2.4;}
+      }
+      for(var ci=0;ci<cars.length;ci++){
+        var o=cars[ci];
+        if(o.dead||!o.m) continue;
+        if(Math.abs(o.m.position.z-p.z)<3.2 && Math.abs(o.m.position.x-p.x)<2.4){
+          o.dead=true; o.vel=new THREE.Vector3(rand(-3,3),rand(6,9),-rand(5,12)); o.sp=rand(-4,4);
+          burst(o.m.position.x,1,o.m.position.z,20,0xff8a2a,12,1.2); shock(o.m.position.x,0.1,o.m.position.z,0xff9a4a,6,0.5); smokePuff(o.m.position.x,1.5,o.m.position.z,true);
+        }
+      }
+    }
+    if(p.life<=0 || p.z>c.z+30){scene.remove(p.g); firePats.splice(i,1);}
+  }
+  if(c.fire>0){
+    c.fire=Math.max(0,c.fire-dt);
+    if(!fireFl){
+      fireFl=new THREE.Group(); fireFl.fl=[];
+      [[0,0.9,-1.0],[-0.7,0.9,0.2],[0.7,0.9,0.2],[0,1.0,1.3]].forEach(function(d,j){fireFl.fl.push(mkFlame(fireFl,d[0],d[1],d[2],0.4,1.5,j%2?fMatY:fMatO));});
+      player.add(fireFl);
+    }
+    fireFl.fl.forEach(function(f){flick(f,performance.now()*0.001,1);});
+    if(Math.random()<0.5){burst(c.x+rand(-0.8,0.8),c.y+1,c.z+rand(-1.5,1.5),1,0xff8a2a,5,0.8); if(Math.random()<0.3) smokePuff(c.x,c.y+1.6,c.z+1,false);}
+  }else if(fireFl){player.remove(fireFl); fireFl=null;}
+}
+
 /* jurassic rush: dinosaurs run and fly toward the player */
 var dinoRingGeo=new THREE.RingGeometry(0.78,1,28), dinoRingMat=new THREE.MeshBasicMaterial({color:0xffe03a,transparent:true,opacity:0.95,side:THREE.DoubleSide,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
 var dinos=[], dinoEv=null, coneGeo=new THREE.ConeGeometry(1,1,8), dinoShadowGeo=new THREE.CircleGeometry(1,16);
@@ -5060,9 +5382,9 @@ function updateBoss(dt,playing){
 /* events can overlap once the score is high: ev.kind is the main one, ev.sec the second one running at the same time */
 function evJoin(k){if(!ev.kind) ev.kind=k; else if(!ev.sec) ev.sec=k;}
 function evHas(k){return ev.kind===k||ev.sec===k;}
-function evLive(){var l=[]; if(boss)l.push('boss'); if(bomber)l.push('bomber'); if(hero)l.push('hero'); if(monkey)l.push('monkey'); if(octoV)l.push('octo'); if(jet)l.push('jet'); if(dinoEv)l.push('dino'); if(ev.met)l.push('meteors'); return l;}
+function evLive(){var l=[]; if(boss)l.push('boss'); if(bomber)l.push('bomber'); if(hero)l.push('hero'); if(monkey)l.push('monkey'); if(octoV)l.push('octo'); if(slimeV)l.push('slime'); if(fireV)l.push('fire'); if(jet)l.push('jet'); if(dinoEv)l.push('dino'); if(ev.met)l.push('meteors'); return l;}
 function evEnded(){var l=evLive(); ev.kind=l[0]||null; ev.sec=l[1]||null; if(!l.length) ev.next=rand(15,24)*gapMul();}
-var MIX_TIERS=[[20000,['meteors','monkey']],[28000,['dino','bomber']],[36000,['boss','octo','jet','hero']]];
+var MIX_TIERS=[[20000,['meteors','monkey']],[28000,['dino','bomber','fire']],[36000,['boss','octo','jet','hero','slime']]];
 function eligibleKinds(){
   var m=[];
   if(elapsed-(ev.lastMet||-99)>25) m.push('meteors');
@@ -5073,6 +5395,8 @@ function eligibleKinds(){
   if(elapsed>20 && elapsed-ev.lastDino>40 && score>=700) m.push('dino');
   if(elapsed>24 && elapsed-ev.lastJet>45 && score>=2600) m.push('jet');
   if(elapsed>16 && elapsed-ev.lastOcto>40 && score>=1800) m.push('octo');
+  if(elapsed>20 && elapsed-ev.lastSlime>45 && score>=1500) m.push('slime');
+  if(elapsed>18 && elapsed-ev.lastFire>40 && score>=1000) m.push('fire');
   return m;
 }
 function tryMix(){
@@ -5080,7 +5404,7 @@ function tryMix(){
   var live=evLive(), pool=eligibleKinds().filter(function(k){return open.indexOf(k)>=0 && live.indexOf(k)<0;});
   if(!pool.length) return;
   var kind=pickOf(pool), bh=bossHits;
-  ({meteors:startMeteors,bomber:startBomber,boss:startBoss,hero:startHero,monkey:startMonkey,dino:startDino,jet:startJet,octo:startOcto})[kind]();
+  ({meteors:startMeteors,bomber:startBomber,boss:startBoss,hero:startHero,monkey:startMonkey,dino:startDino,jet:startJet,octo:startOcto,slime:startSlime,fire:startFire})[kind]();
   bossHits=bh;
 }
 function finishMajor(playing,perfect,normal){
@@ -5423,13 +5747,15 @@ function startRandomEvent(){
   if(elapsed>20 && elapsed-ev.lastDino>40 && score>=700) majors.push('dino');
   if(elapsed>24 && elapsed-ev.lastJet>45 && score>=2600) majors.push('jet');
   if(elapsed>16 && elapsed-ev.lastOcto>40 && score>=1800) majors.push('octo');
+  if(elapsed>20 && elapsed-ev.lastSlime>45 && score>=1500) majors.push('slime');
+  if(elapsed>18 && elapsed-ev.lastFire>40 && score>=1000) majors.push('fire');
   var pool=majors.filter(function(k2){return k2!==ev.prev;});
   if(!pool.length) pool=majors;
   var kind=(pool.length && Math.random()<0.8)?pickOf(pool):'meteors';
   if(kind==='meteors' && ev.prev==='meteors' && pool.length) kind=pickOf(pool);
   if(save.dev && devNext){kind=devNext; devNext=null; renderDevLists();}
   ev.prev=kind;
-  ({meteors:startMeteors,bomber:startBomber,boss:startBoss,hero:startHero,monkey:startMonkey,dino:startDino,jet:startJet,octo:startOcto})[kind]();
+  ({meteors:startMeteors,bomber:startBomber,boss:startBoss,hero:startHero,monkey:startMonkey,dino:startDino,jet:startJet,octo:startOcto,slime:startSlime,fire:startFire})[kind]();
 }
 function updateEvents(dt,playing){
   if(playing) elapsed+=dt;
@@ -5466,12 +5792,16 @@ function updateEvents(dt,playing){
   updateDinos(dt,playing);
   updateJet(dt,playing);
   updateOctoVillain(dt,playing);
+  updateSlime(dt,playing);
+  updateFire(dt,playing);
   var show=false, name='', frac=0;
   if(boss){show=true; name='Drone de entregas'; frac=1-boss.t/boss.dur;}
   else if(bomber){show=true; name='Caminhão bombardeiro'; frac=1-bomber.t/bomber.dur;}
   else if(hero){show=true; name='Capitão Raio'; frac=1-hero.t/hero.dur;}
   else if(monkey){show=true; name='Macaco faminto'; frac=1-monkey.t/monkey.dur;}
   else if(octoV){show=true; name='Doutor Tentáculo'; frac=1-octoV.t/octoV.dur;}
+  else if(slimeV){show=true; name='Monstro de gosma'; frac=1-slimeV.t/slimeV.dur;}
+  else if(fireV){show=true; name='Carro flamejante'; frac=1-fireV.t/fireV.dur;}
   else if(jet){show=true; name='Campo minado'; frac=1-jet.t/jet.dur;}
   else if(dinoEv){show=true; name='Corrida jurássica'; frac=1-dinoEv.t/dinoEv.dur;}
   else if(ev.met){show=true; name='Chuva de meteoros'; frac=1-ev.t/ev.dur;}
@@ -5492,9 +5822,18 @@ function resetEvents(){
   octos.forEach(function(o){scene.remove(o.m); if(o.ring) scene.remove(o.ring);}); octos=[];
   stuckO.forEach(function(m){player.remove(m);}); stuckO=[];
   missiles.forEach(function(o){scene.remove(o.m); if(o.ring) scene.remove(o.ring);}); missiles=[];
+  if(slimeV){slimeV.cars.forEach(function(it){if(it.ring) scene.remove(it.ring);}); scene.remove(slimeV.m); slimeV=null;}
+  gooBalls.forEach(function(b){scene.remove(b.m); scene.remove(b.ring);}); gooBalls=[];
+  gooPuds.forEach(function(q){scene.remove(q.m);}); gooPuds=[];
+  gooStuck.forEach(function(m){player.remove(m);}); gooStuck=[];
+  if(fireV){scene.remove(fireV.m); fireV=null;}
+  firePats.forEach(function(q){scene.remove(q.g);}); firePats=[]; fireCd=0;
+  if(fireFl){player.remove(fireFl); fireFl=null;}
+  smokes.forEach(function(q){q.on=false; q.m.visible=false;});
+  c.goo=0; c.gv=0; c.fire=0;
   if(hero){scene.remove(hero.m); scene.remove(hero.ring); scene.remove(hero.cross); hero.beams.forEach(function(b){scene.remove(b);});}
   falls=[]; rockets=[]; boss=null; bomber=null; hero=null;
-  ev.kind=null; ev.sec=null; ev.met=false; ev.mixT=undefined; ev.lastMet=-99; ev.next=18; ev.lastBoss=-99; ev.lastBomber=-99; ev.lastHero=-99; ev.lastMonkey=-99; ev.lastDino=-99; ev.lastJet=-99; ev.lastOcto=-99; ev.prev='';
+  ev.kind=null; ev.sec=null; ev.met=false; ev.mixT=undefined; ev.lastMet=-99; ev.next=18; ev.lastBoss=-99; ev.lastBomber=-99; ev.lastHero=-99; ev.lastMonkey=-99; ev.lastDino=-99; ev.lastJet=-99; ev.lastOcto=-99; ev.lastSlime=-99; ev.lastFire=-99; ev.prev='';
   rocketNext=3; elapsed=0; bossHits=0;
 }
 
@@ -5547,7 +5886,8 @@ function update(dt){
   var steer=(inp.right?1:0)-(inp.left?1:0);
   var demo=(state==='menu'||state==='over');
   if(!playing){demoT+=dt; steer=demo?demoPilot():Math.sin(demoT*0.5)*0.2;}
-  c.psi+=(steer*0.36-c.psi)*Math.min(1,3.4*dt);
+  c.psi+=(steer*0.36-c.psi)*Math.min(1,(c.goo>0?1.1:3.4)*dt);
+  if(c.goo>0) c.psi+=Math.sin(performance.now()*0.004+c.goo)*0.35*dt;
   if(c.slip>0){c.slip-=dt; c.psi+=Math.sin(c.slip*28)*0.9*dt;}
 
   /* speed */
@@ -5570,15 +5910,17 @@ function update(dt){
   }
   if(c.air<0) c.air=0;
   else if(c.grounded && !wantBoost && !wantLift) c.air=Math.min(TANK,c.air+45*dt);
-  if(playing){c.shield=Math.max(0,c.shield-dt); c.mult=Math.max(0,c.mult-dt); c.nitro=Math.max(0,c.nitro-dt); c.turbo=Math.max(0,c.turbo-dt); c.slow=Math.max(0,c.slow-dt); c.zap=Math.max(0,c.zap-dt);}
+  if(playing){c.shield=Math.max(0,c.shield-dt); c.mult=Math.max(0,c.mult-dt); c.nitro=Math.max(0,c.nitro-dt); c.turbo=Math.max(0,c.turbo-dt); c.slow=Math.max(0,c.slow-dt); c.zap=Math.max(0,c.zap-dt); c.goo=Math.max(0,c.goo-dt);}
   if(c.nitro>0) c.air=TANK;
   if(c.zap>0) c.air=0;
   if(demo){demoTricks(dt); if(dmo.lift){wantLift=true; c.air=Math.max(c.air,60);}} else dmo.ang=0;
 
   /* movement */
-  var nx=c.x+Math.sin(c.psi)*c.speed*dt, lim=ROAD_HALF-1.3;
+  if(c.gv!==0){c.gv*=Math.max(0,1-(c.goo>0?0.5:2.5)*dt); if(Math.abs(c.gv)<0.05) c.gv=0;}
+  if(c.goo>0 && c.grounded && playing){c.gvT-=dt; if(c.gvT<=0){c.gvT=rand(0.7,1.3); c.gv=clamp(c.gv+rand(-5,5),-14,14);}}
+  var nx=c.x+Math.sin(c.psi)*c.speed*dt+c.gv*dt, lim=ROAD_HALF-1.3;
   if(nx>lim||nx<-lim){
-    nx=clamp(nx,-lim,lim); c.psi*=0.4; c.speed=Math.max(0,c.speed*(1-0.5*dt));
+    nx=clamp(nx,-lim,lim); c.psi*=0.4; c.gv*=-0.3; c.speed=Math.max(0,c.speed*(1-0.5*dt));
     if(c.grounded){burst(nx+(nx>0?1.1:-1.1),0.5,c.z,3,0xffd070,9,0.5); if(scrapeCd<=0 && playing){sfx('scrape'); scrapeCd=0.25;}}
   }
   c.x=nx;
@@ -5708,7 +6050,7 @@ function update(dt){
   var tp=(c.grounded?Math.atan2(c.slopeVy,Math.max(c.speed,5)):clamp(c.vy*0.045,-0.4,0.5))+(c.grounded?((inp.brake?-0.05:0)+(wantBoost?0.04:0)):0);
   c.pitch+=(tp-c.pitch)*Math.min(1,8*dt);
   player.position.set(c.x,c.y+(c.grounded?Math.sin(performance.now()*0.03*(0.5+c.speed/40))*0.018*Math.min(1,c.speed/30):0),c.z);
-  player.rotation.y=-c.psi+(c.slip>0?Math.sin(c.slip*14)*0.9*Math.min(1,c.slip):0);
+  player.rotation.y=-c.psi+c.gv*0.035+(c.slip>0?Math.sin(c.slip*14)*0.9*Math.min(1,c.slip):0);
   player.rotation.x=c.pitch+fx.jp+dmo.ang;
   player.rotation.z=c.psi*0.35+c.rollAng+fx.jr;
   player.userData.tail.color.setHex(inp.brake?0xffb0b0:tailBase);
@@ -5783,6 +6125,8 @@ function update(dt){
   });
   if(state==='play') chips+='<span class="chip" style="color:#a9b0d0">Perigo '+(1+Math.floor(diffT()*4.99))+'/5</span>';
   if(save.dev && devNext) chips+='<span class="chip" style="color:#ff5a5f">DEV · próximo: '+devName(devNext)+'</span>';
+  if(c.goo>0) chips+='<span class="chip" style="color:#7dff4a">Gosma · sem aderência '+Math.ceil(c.goo)+' s</span>';
+  if(c.fire>0) chips+='<span class="chip" style="color:#ff8a2a">Em chamas</span>';
   if(c.zap>0) chips+='<span class="chip" style="color:#4aff6a">Ar bloqueado '+Math.ceil(c.zap)+' s</span>';
   if(c.slow>0) chips+='<span class="chip" style="color:#d9a0ff">Polvo grudado '+Math.ceil(c.slow)+' s</span>';
   if(c.turbo>0) chips+='<span class="chip" style="color:#ffe14a">SUPER BOOST '+Math.ceil(c.turbo)+' s</span>';
