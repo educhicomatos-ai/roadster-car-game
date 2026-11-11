@@ -3961,14 +3961,19 @@ function acHandleHash(h){
 
 /* login com email e senha (Supabase Auth) */
 function acErr(j){
-  var m=String((j&&(j.msg||j.error_description||j.message||j.error))||'').toLowerCase();
+  var raw=String((j&&(j.msg||j.error_description||j.message||j.error))||''), code=String((j&&(j.error_code||j.code))||''), m=(raw+' '+code).toLowerCase();
+  if(m.indexOf('signup_disabled')>=0||m.indexOf('signups not allowed')>=0||m.indexOf('email_provider_disabled')>=0||m.indexOf('provider is disabled')>=0) return 'O cadastro por email está desativado no Supabase (Authentication > Sign In / Providers > Email).';
+  if(m.indexOf('email_not_confirmed')>=0) return 'Confirme seu email (veja a caixa de entrada e o spam) antes de entrar.';
+  if(m.indexOf('over_email_send_rate_limit')>=0||m.indexOf('email rate limit')>=0) return 'Limite de envio de emails do Supabase atingido. Aguarde cerca de 1 hora ou desative "Confirm email" no painel.';
+  if(m.indexOf('email_address_invalid')>=0) return 'Esse email não foi aceito. Tente outro endereço.';
+  if(m.indexOf('invalid api key')>=0||m.indexOf('apikey')>=0) return 'Chave do Supabase inválida no jogo.';
   if(m.indexOf('invalid login')>=0) return 'Email ou senha incorretos.';
   if(m.indexOf('already')>=0) return 'Esse email já tem conta. Toque em Entrar.';
   if(m.indexOf('at least')>=0||m.indexOf('weak')>=0) return 'A senha precisa ter pelo menos 6 caracteres.';
   if(m.indexOf('not confirmed')>=0) return 'Confirme seu email (veja a caixa de entrada) antes de entrar.';
   if(m.indexOf('rate limit')>=0||m.indexOf('too many')>=0) return 'Muitas tentativas. Aguarde um pouco e tente de novo.';
   if(m.indexOf('valid email')>=0||m.indexOf('invalid email')>=0) return 'Digite um email válido.';
-  return 'Não foi possível concluir. Tente de novo.';
+  return 'Não foi possível concluir'+(raw||code?' ('+(code||raw).slice(0,80)+')':'')+'. Tente de novo.';
 }
 function acSession(j){
   var u=j.user||{}; AC.at=j.access_token; AC.rt=j.refresh_token; AC.exp=Date.now()+(Number(j.expires_in)||3600)*1000;
@@ -3984,9 +3989,10 @@ function acEmailAuth(mode){
   .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
   .then(function(x){
     if(!x.ok) throw {msg:acErr(x.j)};
+    if(mode==='up'&&x.j&&x.j.user&&x.j.user.identities&&x.j.user.identities.length===0){acMsg('Esse email já tem conta. Toque em Entrar.'); return;}
     if(!x.j.access_token){acMsg('Conta criada! Enviamos um email de confirmação: confirme e depois toque em Entrar.'); return;}
     acSession(x.j); $('acPass').value=''; acRender(); sfx('pickup'); return acSync();
-  }).catch(function(e){acMsg(e&&e.msg?e.msg:'Sem conexão. Tente de novo.');});
+  }).catch(function(e){acMsg(e&&e.msg?e.msg:'Sem conexão com o servidor. Verifique a internet e tente de novo.');});
 }
 $('acForm').addEventListener('submit',function(e){e.preventDefault(); acEmailAuth('in');});
 $('acUp').addEventListener('click',function(){this.blur(); acEmailAuth('up');});
