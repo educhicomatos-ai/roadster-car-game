@@ -1,0 +1,13 @@
+{
+  "name": "rocket-car-game",
+  "version": "1.0.0",
+  "description": "Rocket Car Game: jogo 3D de direção (HTML + Three.js), PWA e app Android",
+  "private": true,
+  "scripts": {
+    "build": "node tools/build.js",
+    "check": "node tools/build.js --check",
+    "single": "node tools/build.js --single",
+    "start": "node tools/servir.js"
+  },
+  "engines": { "node": ">=16" }
+}

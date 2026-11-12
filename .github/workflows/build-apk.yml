@@ -19,10 +19,14 @@ jobs:
           gradle-version: '8.9'
       - name: Copiar o jogo e o motor 3D para o app
         run: |
-          mkdir -p android/app/src/main/assets
-          cp index.html android/app/src/main/assets/index.html
-          if curl -fsSL -o android/app/src/main/assets/three.min.js https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js; then
-            sed -i 's#https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js#three.min.js#' android/app/src/main/assets/index.html
+          A=android/app/src/main/assets
+          mkdir -p $A/src/js/pwa
+          cp index.html manifest.webmanifest $A/
+          cp -r dist assets $A/
+          cp -r src/styles $A/src/styles
+          cp src/js/pwa/registrar-service-worker.js $A/src/js/pwa/
+          if curl -fsSL -o $A/three.min.js https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js; then
+            sed -i 's#https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js#three.min.js#' $A/index.html
           fi
       - name: Compilar APK
         working-directory: android
