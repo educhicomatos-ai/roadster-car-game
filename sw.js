@@ -2,7 +2,7 @@
    - index.html e manifesto: rede primeiro (atualiza sozinho), cache só se estiver offline.
    - Motor 3D, fontes e ícones: cache primeiro (baixados uma vez, depois funcionam offline).
    - Supabase (ranking, conta, nuvem): NUNCA passa pelo cache, para todos verem os mesmos dados. */
-var CACHE='rocket-car-game-v4';
+var CACHE='rocket-car-game-v5';
 var CORE=['./','index.html','manifest.webmanifest','assets/icons/icon-192.png','assets/icons/icon-512.png','dist/game.js','src/styles/layout.css','src/styles/tema-velho-oeste.css','src/styles/hud.css','src/js/pwa/registrar-service-worker.js'];
 var CACHEABLE=['cdnjs.cloudflare.com','fonts.googleapis.com','fonts.gstatic.com'];
 self.addEventListener('install',function(e){
